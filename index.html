@@ -704,7 +704,8 @@ function renderSpeakers(stats,pick,prompt){upPick=pick;upPickPrompt=prompt||'';c
  const keys=Object.keys(stats).sort((a,b)=>((b===pick)?1:0)-((a===pick)?1:0)||stats[b].talk-stats[a].talk);
  box.innerHTML='<div class="mini">Speakers found — tap the one you want to voice'+(pick?' (AI’s pick is marked)':'')+':</div>'+
  keys.map(k=>{const s=stats[k],lab=k.replace('SPEAKER_','Speaker ');
-  return '<div class="chip'+(k===pick?' on':'')+'" data-sp="'+k+'">'+(upSpMap&&upSpMap[k]?'Character '+upSpMap[k].n+' · '+s.n+' lines · '+Math.round(s.talk)+'s — “'+s.sample.slice(0,40)+'…”':lab+' · '+s.n+' lines · '+Math.round(s.talk)+'s — “'+s.sample.slice(0,40)+'…”')</div>'}).join('')+
+  const cn=upSpMap&&upSpMap[k]?('Character '+upSpMap[k].n):lab;
+  return '<div class="chip'+(k===pick?' on':'')+'" data-sp="'+k+'">'+cn+' \u00b7 '+s.n+' lines \u00b7 '+Math.round(s.talk)+'s \u2014 \u201c'+s.sample.slice(0,40)+'\u2026\u201d</div>'}).join('')+
  '<button class="btn sm p" id="up-voice" style="display:none">Voice it now →</button>';
  $$('#up-speakers .chip[data-sp]').forEach(el=>el.onclick=()=>{$$('#up-speakers .chip[data-sp]').forEach(x=>x.classList.remove('on'));el.classList.add('on');upPick=el.dataset.sp;$('#up-voice').style.display='block'});
  const vb=$('#up-voice');if(vb)vb.onclick=async()=>{if(!upPick)return;
