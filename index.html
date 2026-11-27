@@ -201,7 +201,13 @@ a{color:var(--bl)}
       <select id="up-linechar"></select>
       <textarea id="uptext" rows="2" placeholder="What they say (optional)"></textarea>
     </div></div>
-    <button class="btn sm" id="up-ai">✨ AI transcribe (first 6 min, optional)</button>
+    <div class="card"><div class="cbody" style="gap:8px">
+      <div class="t">AI auto-direct</div>
+      <input id="up-prompt" placeholder="Who do you want to voice? e.g. the narrator">
+      <button class="btn sm p" id="up-ai">✨ Find their lines (first 6 min)</button>
+      <div id="up-speakers" style="display:flex;flex-direction:column;gap:6px"></div>
+      <div class="mini">The AI listens to your clip's audio and marks every line with its exact timing. Nudge any line's start or end if it's off.</div>
+    </div></div>
     <div id="uplines" style="display:flex;flex-direction:column;gap:6px"></div>
     <button class="btn p" id="up-save">SAVE SCENE →</button>
   </div>
@@ -427,11 +433,12 @@ function openPreview(id){const s=sceneById(id);$('#pvbox').innerHTML='<div class
 $('#pv').onclick=e=>{if(e.target.id==='pv'){$('#pv').classList.remove('on');const v=$('#pvbox video');if(v)v.pause()}};
 /* ---------- setup ---------- */
 let SU={scene:null,chars:[],mode:'solo',perfs:{}};
-function openSetup(id){const s=sceneById(id);SU={scene:s,chars:[],mode:'solo',perfs:{}};
+function openSetup(id,pre){const s=sceneById(id);SU={scene:s,chars:[],mode:'solo',perfs:{}};
  $('#su-film').textContent=s.title;$('#su-meta').innerHTML='<span class="badge">'+s.film+' ('+s.year+')</span><span class="badge">'+fmt(s.dur)+'</span><span class="badge">'+s.lines.length+' lines</span>';
  $('#su-blurb').textContent=s.blurb;$('#su-title').textContent='Cast yourself';
  $('#su-chars').innerHTML=Object.entries(s.chars).map(([k,c])=>'<div class="chip" data-c="'+k+'"><i style="display:inline-block;width:9px;height:9px;border-radius:50%;background:'+c.c+';margin-right:6px"></i>'+c.n+'</div>').join('');
  $$('#su-chars .chip').forEach(el=>el.onclick=()=>{const k=el.dataset.c;const i=SU.chars.indexOf(k);if(i>=0)SU.chars.splice(i,1);else SU.chars.push(k);el.classList.toggle('on');renderPerfs()});
+ if(pre){SU.chars=[pre];const pe=document.querySelector('#su-chars .chip[data-c="'+pre+'"]');if(pe)pe.classList.add('on');renderPerfs()}
  $$('#su-mode button').forEach(b=>{b.onclick=()=>{$$('#su-mode button').forEach(x=>x.classList.remove('on'));b.classList.add('on');SU.mode=b.dataset.m;renderPerfs()}});
  go('setup')}
 function renderPerfs(){const box=$('#su-perfs');if(SU.mode==='friends'&&SU.chars.length){box.style.display='flex';
@@ -653,13 +660,19 @@ $('#up-in').onclick=()=>{$('#upvid').pause();upIn=$('#upvid').currentTime;$('#up
 $('#up-out').onclick=()=>{$('#upvid').pause();upOut=$('#upvid').currentTime;$('#up-io').textContent='start '+(upIn!=null?upIn.toFixed(1)+'s':'—')+' / end '+upOut.toFixed(1)+'s'};
 $('#up-add').onclick=()=>{if(upIn==null||upOut==null||upOut<=upIn){toast('Set a start and an end first');return}
  const ch=$('#up-linechar').value;if(!ch){toast('Pick or add a character first');return}
- upLines.push({ch,t0:+upIn,t1:+upOut,text:$('#uptext').value.trim()});upLines.sort((a,b)=>a.t0-b.t0);upIn=upOut=null;$('#uptext').value='';$('#up-io').textContent='start — / end —';renderUpLines()};
-function renderUpLines(){$('#uplines').innerHTML=upLines.length?upLines.map((l,i)=>'<div class="row" style="font-size:12px;padding:6px 0;border-bottom:1px solid var(--line)"><i style="width:8px;height:8px;border-radius:50%;background:'+upChars[l.ch].c+';flex:none"></i><div style="flex:1;min-width:0">'+upChars[l.ch].n+' <span class="mini">'+l.t0.toFixed(1)+'–'+l.t1.toFixed(1)+'s</span><div style="white-space:nowrap;overflow:hidden;text-overflow:ellipsis;color:var(--dim)">'+(l.text||'(no text)')+'</div></div><button class="btn sm d" data-rm="'+i+'">✕</button></div>').join(''):'<div class="mini">No lines marked yet. Play the clip, pause where a line starts, set start and end, add it.</div>';
- $$('#uplines [data-rm]').forEach(el=>el.onclick=()=>{upLines.splice(+el.dataset.rm,1);renderUpLines()})}
+ const rec={ch,t0:+upIn,t1:+upOut,text:$('#uptext').value.trim()};
+ if(upEdit!=null){upLines[upEdit]=rec;upEdit=null;$('#up-add').textContent='+ add line'}else upLines.push(rec);
+ upLines.sort((a,b)=>a.t0-b.t0);upIn=upOut=null;$('#uptext').value='';$('#up-io').textContent='start — / end —';renderUpLines()};
+let upEdit=null;
+function renderUpLines(){$('#uplines').innerHTML=upLines.length?upLines.map((l,i)=>'<div class="row" style="font-size:12px;padding:6px 0;border-bottom:1px solid var(--line)"><i style="width:8px;height:8px;border-radius:50%;background:'+upChars[l.ch].c+';flex:none"></i><div style="flex:1;min-width:0">'+upChars[l.ch].n+' <span class="mini">'+l.t0.toFixed(1)+'–'+l.t1.toFixed(1)+'s · '+(l.t1-l.t0).toFixed(1)+'s long</span><div style="white-space:nowrap;overflow:hidden;text-overflow:ellipsis;color:var(--dim)">'+(l.text||'(no text)')+'</div></div><button class="btn sm" data-play="'+i+'">▶</button><button class="btn sm" data-edit="'+i+'">✎</button><button class="btn sm d" data-rm="'+i+'">✕</button></div>').join(''):'<div class="mini">No lines marked yet. Play the clip, pause where a line starts, set start and end, add it.</div>';
+ $$('#uplines [data-rm]').forEach(el=>el.onclick=()=>{upLines.splice(+el.dataset.rm,1);if(upEdit==+el.dataset.rm)upEdit=null;renderUpLines()});
+ $$('#uplines [data-play]').forEach(el=>el.onclick=()=>{const l=upLines[+el.dataset.play];const v=$('#upvid');v.currentTime=Math.max(0,l.t0-0.3);v.play();const st=()=>{if(v.currentTime>=l.t1+0.25){v.pause();v.removeEventListener('timeupdate',st)}};v.addEventListener('timeupdate',st)});
+ $$('#uplines [data-edit]').forEach(el=>el.onclick=()=>{const i=+el.dataset.edit,l=upLines[i];upEdit=i;upIn=l.t0;upOut=l.t1;$('#up-linechar').value=l.ch;$('#uptext').value=l.text||'';$('#up-io').textContent='editing line '+(i+1)+' — reset start/end below or with the buttons';$('#up-add').textContent='save changes';const v=$('#upvid');v.currentTime=Math.max(0,l.t0-0.5);$('#up-io').scrollIntoView({block:'center'})})}
 $('#up-ai').onclick=async()=>{if(!upBlob)return;const key=LS.get('rs_key','');if(!key){toast('Add a Google AI Studio key in Settings first');return}
+ const prompt=($('#up-prompt')?$('#up-prompt').value.trim():'');
  try{toast('Listening to your clip…');const ab=await upBlob.arrayBuffer();const tmp=new (window.AudioContext||window.webkitAudioContext)();const full=await tmp.decodeAudioData(ab);tmp.close&&tmp.close();
   const maxD=Math.min(360,full.duration);const off=new OfflineAudioContext(1,Math.floor(maxD*16000),16000);const src=off.createBufferSource();src.buffer=full;src.connect(off.destination);src.start(0,0,maxD);const mono=await off.startRendering();
-  const step=100;let added=0;
+  const step=100;const all=[];let added=0;
   for(let s=0;s<maxD;s+=step){const e=Math.min(maxD,s+step);const a=Math.floor(s*16000),b=Math.floor(e*16000);
    const sub={length:b-a,sampleRate:16000,getChannelData:()=>mono.getChannelData(0).subarray(a,b)};
    const b64=await new Promise(r=>{const fr=new FileReader();fr.onload=()=>r(fr.result.split(',')[1]);fr.readAsDataURL(encodeWAV(sub))});
@@ -667,17 +680,40 @@ $('#up-ai').onclick=async()=>{if(!upBlob)return;const key=LS.get('rs_key','');if
    const r=await fetch('https://generativelanguage.googleapis.com/v1beta/models/gemini-3.5-flash-lite:generateContent?key='+encodeURIComponent(key),{method:'POST',headers:{'Content-Type':'application/json'},body});
    const j=await r.json();const txt=((j.candidates||[])[0]||{content:{parts:[]}}).content.parts.map(p=>p.text||'').join('');const A=txt.indexOf('['),B=txt.lastIndexOf(']');
    if(A>=0&&B>A){let arr;try{arr=JSON.parse(txt.slice(A,B+1))}catch(x){continue}
-    arr.forEach(l=>{if(!l.text)return;const sp=l.speaker||'SPEAKER_A';const id=addUpChar(sp==='SPEAKER_A'?'Speaker A':sp.replace('SPEAKER_','Speaker '));upLines.push({ch:id,t0:s+ +l.start,t1:s+ +(l.end||+l.start+2),text:l.text});added++})}
+    arr.forEach(l=>{if(!l.text)return;const sp=l.speaker||'SPEAKER_A';all.push({sp,s:s+ +l.start,e:s+ +(l.end||+l.start+2),t:l.text});added++})}
    toast('Transcribed '+Math.round(e)+'s of '+Math.round(maxD)+'s…')}
-  upLines.sort((a,b)=>a.t0-b.t0);renderUpLines();toast(added?added+' lines found — check and rename the speakers':'No dialogue found in the first 6 minutes')}
+  if(!all.length){toast('No dialogue found in the first 6 minutes — mark the lines by hand');return}
+  all.forEach(l=>{const id=addUpChar(l.sp.replace('SPEAKER_','Speaker '));upLines.push({ch:id,t0:l.s,t1:l.e,text:l.t})});
+  upLines.sort((a,b)=>a.t0-b.t0);renderUpLines();
+  const stats={};all.forEach(l=>{const k=stats[l.sp]||(stats[l.sp]={n:0,talk:0,sample:l.t});stats[k].n++;stats[k].talk+=l.e-l.s});
+  let pick=null;
+  if(prompt){try{toast('Matching your character…');const pb=JSON.stringify({contents:[{role:'user',parts:[{text:'A video\'s audio was transcribed with speaker labels. Stats: '+JSON.stringify(stats)+'. The user wants to voice-over the character described as: "'+prompt+'". Which single speaker label (SPEAKER_A, SPEAKER_B, ...) is most likely that character? Reply with ONLY the label.'}]}],generationConfig:{temperature:0.1}});
+   const pr=await fetch('https://generativelanguage.googleapis.com/v1beta/models/gemini-3.5-flash-lite:generateContent?key='+encodeURIComponent(key),{method:'POST',headers:{'Content-Type':'application/json'},body:pb});
+   const pj=await pr.json();const pt=((pj.candidates||[])[0]||{content:{parts:[]}}).content.parts.map(p=>p.text||'').join('');const mm=pt.match(/SPEAKER_[A-Z]/);if(mm&&stats[mm[0]])pick=mm[0]}}catch(e){}
+  renderSpeakers(stats,pick,prompt);
+  toast(added+' lines found — tap the speaker you want to voice')}
  catch(err){toast('Transcription failed — mark the lines by hand (it always works)')}};
-$('#up-save').onclick=async()=>{if(!upBlob)return;if(!upLines.length){toast('Mark at least one line');return}
+let upPick=null,upPickPrompt='';
+function renderSpeakers(stats,pick,prompt){upPick=pick;upPickPrompt=prompt||'';const box=$('#up-speakers');
+ const keys=Object.keys(stats).sort((a,b)=>((b===pick)?1:0)-((a===pick)?1:0)||stats[b].talk-stats[a].talk);
+ box.innerHTML='<div class="mini">Speakers found — tap the one you want to voice'+(pick?' (AI’s pick is marked)':'')+':</div>'+
+ keys.map(k=>{const s=stats[k],lab=k.replace('SPEAKER_','Speaker ');
+  return '<div class="chip'+(k===pick?' on':'')+'" data-sp="'+k+'">'+lab+' · '+s.n+' lines · '+Math.round(s.talk)+'s — “'+s.sample.slice(0,46)+'…”</div>'}).join('')+
+ '<button class="btn sm p" id="up-voice" style="display:none">Voice it now →</button>';
+ $$('#up-speakers .chip[data-sp]').forEach(el=>el.onclick=()=>{$$('#up-speakers .chip[data-sp]').forEach(x=>x.classList.remove('on'));el.classList.add('on');upPick=el.dataset.sp;$('#up-voice').style.display='block'});
+ const vb=$('#up-voice');if(vb)vb.onclick=async()=>{if(!upPick)return;
+  const name=(upPickPrompt&&upPickPrompt.length<=28)?upPickPrompt:('Speaker '+upPick.replace('SPEAKER_',''));
+  const oldId=Object.keys(upChars).find(k=>upChars[k].n==='Speaker '+upPick.replace('SPEAKER_',''));
+  if(oldId)upChars[oldId].n=name;renderUpChars();
+  const rec=await saveUploadScene();if(rec)openSetup(rec.id,oldId||upPick)}
+async function saveUploadScene(){if(!upBlob)return null;if(!upLines.length){toast('Mark at least one line');return null}
  const v=$('#upvid');let thumb='';try{const c=document.createElement('canvas');c.width=200;c.height=150;c.getContext('2d').drawImage(v,0,0,200,150);thumb=c.toDataURL('image/jpeg',.55)}catch(e){}
  const vid=newId();const def={id:vid,custom:true,title:$('#upname').value.trim()||'My scene',film:'My upload',year:'',genre:'Custom',dur:upDur||Math.round(v.duration),thumb:thumb||'media/notld_tease.jpg',vidId:vid,
-  chars:JSON.parse(JSON.stringify(upChars)),lines:upLines.map((l,i)=>[l.ch,+l.t0.toFixed(2),+l.t1.toFixed(2),l.text])};
+  chars:JSON.parse(JSON.stringify(upChars)),lines:upLines.map(l=>[l.ch,+l.t0.toFixed(2),+l.t1.toFixed(2),l.text])};
  def.videoURL=URL.createObjectURL(upBlob);CUSTOM.push(def);
  await dbPut('vids',{id:vid,blob:upBlob,name:def.title,def:JSON.parse(JSON.stringify(Object.assign({},def,{videoURL:undefined})))});
- toast('Scene saved');go('lib')};
+ toast('Scene saved');return {id:vid}}
+$('#up-save').onclick=async()=>{const r=await saveUploadScene();if(r)go('lib')};
 /* ---------- init ---------- */
 (async function(){try{const vids=await dbAll('vids');CUSTOM=vids.filter(v=>v.def).map(v=>{const d=Object.assign({},v.def);d.videoURL=URL.createObjectURL(v.blob);return d})}catch(e){}
  SCENES.forEach(s=>s.videoURL=s.video);
