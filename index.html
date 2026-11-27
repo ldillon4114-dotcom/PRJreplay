@@ -1,0 +1,689 @@
+<!DOCTYPE html>
+<html lang="en"><head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="theme-color" content="#0b0b0e">
+<title>REPLAY STUDIO</title>
+<style>
+:root{--bg:#0b0b0e;--panel:#14141a;--panel2:#1a1a22;--line:#26262f;--tx:#eef0f4;--dim:#9aa0ab;--em:#17c964;--bl:#3b9dff;--rd:#ff4d5e;--am:#f59e0b}
+*{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent}
+html,body{height:100%}
+body{background:var(--bg);color:var(--tx);font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;overflow-x:hidden}
+body::before{content:"";position:fixed;inset:0;background:
+ radial-gradient(1200px 500px at 50% -10%,rgba(23,201,100,.10),transparent 60%),
+ radial-gradient(900px 420px at 90% 110%,rgba(59,157,255,.10),transparent 60%);pointer-events:none;z-index:0}
+#app{position:relative;z-index:1;max-width:560px;margin:0 auto;padding:18px 14px 40px;min-height:100vh;display:flex;flex-direction:column}
+.scr{display:none;flex-direction:column;gap:14px;animation:fade .25s ease}
+.scr.on{display:flex}
+@keyframes fade{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:none}}
+.top{display:flex;align-items:center;gap:10px}
+.back{background:none;border:1px solid var(--line);color:var(--dim);width:38px;height:38px;border-radius:12px;font-size:17px;flex:none}
+h1.logo{font-size:34px;font-weight:900;letter-spacing:.14em;text-align:center;line-height:1.1;
+ background:linear-gradient(92deg,#d9ffe9 0%,var(--em) 38%,#7cd8ff 72%,var(--bl) 100%);-webkit-background-clip:text;background-clip:text;color:transparent;
+ filter:drop-shadow(0 0 18px rgba(23,201,100,.35))}
+.tag{text-align:center;color:var(--dim);font-size:13px;letter-spacing:.28em;text-transform:uppercase}
+.marq{display:flex;justify-content:center;gap:6px;margin:2px 0 4px}
+.marq i{width:5px;border-radius:3px;background:linear-gradient(180deg,var(--em),var(--bl));opacity:.85;animation:eq 1.1s ease-in-out infinite}
+@keyframes eq{0%,100%{height:6px}50%{height:22px}}
+.grid{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.tile{background:linear-gradient(160deg,var(--panel),var(--panel2));border:1px solid var(--line);border-radius:16px;padding:16px 14px;min-height:88px;display:flex;flex-direction:column;justify-content:flex-end;gap:3px;cursor:pointer;transition:transform .15s,border-color .15s}
+.tile:active{transform:scale(.97)}
+.tile b{font-size:15px}.tile span{font-size:11px;color:var(--dim)}
+.tile .ic{font-size:22px;margin-bottom:4px}
+.tile.em{border-color:rgba(23,201,100,.4)}.tile.bl{border-color:rgba(59,157,255,.4)}
+h2{font-size:17px;letter-spacing:.06em}
+h2 small{color:var(--dim);font-weight:400;font-size:12px;letter-spacing:0}
+input,select,textarea{background:var(--panel);border:1px solid var(--line);color:var(--tx);border-radius:12px;padding:11px 12px;font-size:15px;width:100%;outline:none}
+input:focus,textarea:focus{border-color:var(--em)}
+.chips{display:flex;gap:8px;flex-wrap:wrap}
+.chip{padding:8px 13px;border-radius:999px;border:1px solid var(--line);background:var(--panel);color:var(--dim);font-size:13px;cursor:pointer;white-space:nowrap}
+.chip.on{border-color:var(--em);color:#d9ffe9;background:rgba(23,201,100,.12)}
+.card{background:var(--panel);border:1px solid var(--line);border-radius:16px;overflow:hidden}
+.card .th{width:100%;aspect-ratio:4/3;object-fit:cover;display:block;background:#000}
+.cbody{padding:11px 12px;display:flex;flex-direction:column;gap:7px}
+.cbody .t{font-weight:700;font-size:15px}
+.meta{display:flex;gap:8px;flex-wrap:wrap;font-size:11px;color:var(--dim)}
+.dots{display:flex;gap:5px;flex-wrap:wrap}
+.dot{display:inline-flex;align-items:center;gap:4px;font-size:11px;color:var(--dim)}
+.dot i{width:8px;height:8px;border-radius:50%}
+.row{display:flex;gap:10px;align-items:center}
+.row>*{min-width:0}
+.btn{border:none;border-radius:13px;padding:13px 16px;font-size:15px;font-weight:700;cursor:pointer;background:var(--panel2);color:var(--tx);border:1px solid var(--line);transition:transform .12s}
+.btn:active{transform:scale(.96)}
+.btn.p{background:linear-gradient(120deg,var(--em),#12b98a);color:#04160c;border:none;box-shadow:0 4px 24px rgba(23,201,100,.3)}
+.btn.b{background:linear-gradient(120deg,var(--bl),#2f7fe0);color:#fff;border:none}
+.btn.d{color:var(--rd);border-color:rgba(255,77,94,.35)}
+.btn.sm{padding:9px 12px;font-size:13px;border-radius:11px}
+.btn.rec{background:linear-gradient(120deg,var(--rd),#d32636);color:#fff;border:none;animation:pl 1.2s infinite}
+@keyframes pl{0%,100%{box-shadow:0 0 0 0 rgba(255,77,94,.45)}50%{box-shadow:0 0 0 9px rgba(255,77,94,0)}}
+.btn:disabled{opacity:.4}
+.seg{display:flex;background:var(--panel);border:1px solid var(--line);border-radius:13px;overflow:hidden}
+.seg button{flex:1;background:none;border:none;color:var(--dim);padding:11px 6px;font-size:13px;font-weight:600;cursor:pointer}
+.seg button.on{background:rgba(23,201,100,.15);color:#d9ffe9}
+video{width:100%;background:#000;border-radius:14px;display:block}
+.modal{position:fixed;inset:0;background:rgba(5,6,8,.86);z-index:50;display:none;align-items:center;justify-content:center;padding:16px}
+.modal.on{display:flex}
+.mbox{background:var(--panel);border:1px solid var(--line);border-radius:18px;max-width:560px;width:100%;max-height:92vh;overflow:auto;padding:14px;display:flex;flex-direction:column;gap:10px}
+.toast{position:fixed;left:50%;bottom:26px;transform:translateX(-50%);background:#20242c;border:1px solid var(--line);color:var(--tx);padding:10px 16px;border-radius:12px;font-size:13px;z-index:80;opacity:0;transition:opacity .25s;pointer-events:none;max-width:86vw;text-align:center}
+.toast.on{opacity:1}
+.linebig{background:linear-gradient(160deg,var(--panel),var(--panel2));border:1px solid var(--line);border-radius:16px;padding:14px;display:flex;flex-direction:column;gap:8px;min-height:96px}
+.linebig .who{font-size:12px;font-weight:800;letter-spacing:.08em;text-transform:uppercase}
+.linebig .txt{font-size:19px;line-height:1.35;font-weight:600}
+.strip{position:relative;height:26px;background:var(--panel);border:1px solid var(--line);border-radius:10px;overflow:hidden}
+.segline{position:absolute;top:0;bottom:0;border-radius:4px;cursor:pointer}
+.tl-lab{display:flex;justify-content:space-between;font-size:10px;color:var(--dim)}
+.slider{display:flex;align-items:center;gap:10px;font-size:12px;color:var(--dim)}
+.slider input{flex:1;accent-color:var(--em);padding:0;height:22px}
+.slider b{width:76px;text-align:right;color:var(--tx);font-size:12px}
+.meter{width:100%;height:44px;background:#0d0d12;border:1px solid var(--line);border-radius:10px}
+.kv{display:flex;justify-content:space-between;font-size:13px;color:var(--dim);padding:9px 0;border-bottom:1px solid var(--line)}
+.kv b{color:var(--tx);font-weight:600;text-align:right}
+.note{font-size:12px;color:var(--dim);line-height:1.5}
+.badge{font-size:10px;padding:3px 8px;border-radius:999px;border:1px solid var(--line);color:var(--dim);white-space:nowrap}
+.big{font-size:44px;text-align:center}
+.empty{text-align:center;color:var(--dim);padding:30px 10px;font-size:14px;line-height:1.6}
+a{color:var(--bl)}
+.count{font-size:64px;font-weight:900;text-align:center;color:var(--em);text-shadow:0 0 30px rgba(23,201,100,.5);min-height:74px}
+.fav{position:absolute;top:8px;right:8px;background:rgba(8,9,12,.65);border:1px solid var(--line);border-radius:10px;width:34px;height:34px;font-size:16px;cursor:pointer;color:#ffd166}
+.rel{position:relative}
+.pbar{height:6px;background:var(--panel2);border-radius:4px;overflow:hidden}
+.pbar i{display:block;height:100%;background:linear-gradient(90deg,var(--em),var(--bl));width:0%}
+.hr{height:1px;background:var(--line);margin:4px 0}
+.mini{font-size:11px;color:var(--dim)}
+</style></head><body>
+<div id="app">
+<div class="scr on" id="scr-home">
+  <div style="margin-top:14px" class="marq" id="marq"></div>
+  <h1 class="logo">REPLAY<br>STUDIO</h1>
+  <div class="tag">Step into the scene. Become the voice.</div>
+  <div class="grid">
+    <div class="tile em" data-go="lib"><div class="ic">🎬</div><b>Scene Library</b><span>browse public-domain scenes</span></div>
+    <div class="tile bl" data-go="studio"><div class="ic">🎙️</div><b>Recording Studio</b><span>perform your lines</span></div>
+    <div class="tile" data-go="recs"><div class="ic">📼</div><b>My Recordings</b><span>your finished performances</span></div>
+    <div class="tile" data-go="up"><div class="ic">📥</div><b>Create a Scene</b><span>use any video you own</span></div>
+    <div class="tile" data-go="favs"><div class="ic">⭐</div><b>Favorites</b><span>scenes & performances</span></div>
+    <div class="tile" data-go="set"><div class="ic">⚙️</div><b>Settings</b><span>credits & data</span></div>
+  </div>
+  <div id="recent"></div>
+</div>
+<div class="scr" id="scr-lib">
+  <div class="top"><button class="back" data-go="home">‹</button><h2>Scene Library</h2></div>
+  <input id="q" placeholder="Search films, characters, genres…">
+  <div class="chips" id="genres"></div>
+  <div id="scenelist" style="display:flex;flex-direction:column;gap:12px"></div>
+</div>
+<div class="scr" id="scr-setup">
+  <div class="top"><button class="back" data-go="lib">‹</button><h2 id="su-title">Choose your characters</h2></div>
+  <div class="card"><div class="cbody">
+    <div class="t" id="su-film"></div>
+    <div class="meta" id="su-meta"></div>
+    <div class="note" id="su-blurb"></div>
+  </div></div>
+  <h2>Who do you voice?</h2>
+  <div class="chips" id="su-chars"></div>
+  <div class="note">Pick one character (solo) or several and play the whole scene yourself. Other characters keep their original voices.</div>
+  <h2>Game mode</h2>
+  <div class="seg" id="su-mode">
+    <button class="on" data-m="solo">SOLO</button><button data-m="multi">MULTI-CHARACTER</button><button data-m="friends">FRIENDS & FAMILY</button>
+  </div>
+  <div id="su-perfs" style="display:flex;flex-direction:column;gap:8px"></div>
+  <button class="btn p" id="su-go">ENTER THE STUDIO →</button>
+</div>
+<div class="scr" id="scr-studio">
+  <div class="top"><button class="back" id="st-back">‹</button><h2 style="flex:1" id="st-name">Studio</h2><span class="badge" id="st-mode"></span></div>
+  <video id="vid" playsinline preload="auto"></video>
+  <div class="strip" id="strip"></div>
+  <div class="tl-lab"><span id="tcur">0:00</span><span id="tdur">0:00</span></div>
+  <div class="linebig" id="linecard">
+    <div class="who" id="lc-who">—</div>
+    <div class="txt" id="lc-txt">Press play. When it's your turn, the scene stops and hands you the mic.</div>
+  </div>
+  <div class="count" id="count"></div>
+  <canvas class="meter" id="meter"></canvas>
+  <div class="row">
+    <button class="btn" id="b-play">▶ Play</button>
+    <button class="btn rec" id="b-rec" style="flex:1">● RECORD</button>
+    <button class="btn sm" id="b-take" disabled>▶ my take</button>
+    <button class="btn sm d" id="b-del" disabled>🗑</button>
+  </div>
+  <div class="row">
+    <button class="btn sm" id="b-practice">Practice: off</button>
+    <button class="btn sm" id="b-flow">One-take: off</button>
+    <button class="btn sm p" id="b-done" style="margin-left:auto">Finish →</button>
+  </div>
+  <div class="card"><div class="cbody" style="gap:9px">
+    <div class="slider"><b>Scene audio</b><input type="range" id="v-scene" min="0" max="100" value="85"></div>
+    <div class="slider"><b>My voice</b><input type="range" id="v-voice" min="0" max="140" value="100"></div>
+    <div class="note" id="st-note">Your character's line windows go silent in the mix so only your voice is heard there — every other character keeps the original performance.</div>
+  </div></div>
+  <div id="st-lines" style="display:flex;flex-direction:column;gap:6px"></div>
+</div>
+<div class="scr" id="scr-result">
+  <div class="top"><button class="back" id="rs-back">‹</button><h2 style="flex:1" id="rs-name">Final cut</h2></div>
+  <video id="vid2" playsinline controls></video>
+  <div class="seg" id="ab">
+    <button class="on" data-v="mine">MY PERFORMANCE</button><button data-v="orig">ORIGINAL SCENE</button>
+  </div>
+  <div class="card"><div class="cbody" style="gap:8px">
+    <div class="t">Line check</div>
+    <div id="rs-lines" style="display:flex;flex-direction:column;gap:5px"></div>
+  </div></div>
+  <div class="row"><button class="btn b" id="b-export" style="flex:1">⬇ Export video</button></div>
+  <div class="pbar" id="expbar" style="display:none"><i></i></div>
+  <div id="expout"></div>
+</div>
+<div class="scr" id="scr-recs">
+  <div class="top"><button class="back" data-go="home">‹</button><h2>My Recordings</h2></div>
+  <div id="recs" style="display:flex;flex-direction:column;gap:12px"></div>
+</div>
+<div class="scr" id="scr-favs">
+  <div class="top"><button class="back" data-go="home">‹</button><h2>Favorites</h2></div>
+  <h2>Scenes</h2><div id="favscenes" style="display:flex;flex-direction:column;gap:12px"></div>
+  <h2>Performances</h2><div id="favrecs" style="display:flex;flex-direction:column;gap:12px"></div>
+</div>
+<div class="scr" id="scr-up">
+  <div class="top"><button class="back" data-go="home">‹</button><h2>Create a Scene</h2></div>
+  <div class="note">Use any video you have the rights to (MP4, MOV, WebM). Mark each character's lines, name the characters, and the scene opens in your studio. Everything stays on your phone.</div>
+  <input type="file" id="upfile" accept="video/mp4,video/quicktime,video/webm,video/*">
+  <video id="upvid" playsinline controls style="display:none"></video>
+  <div id="upui" style="display:none;flex-direction:column;gap:10px">
+    <input id="upname" placeholder="Scene name (e.g. Living room, Christmas Eve)">
+    <div class="row"><input id="upchar" placeholder="New character name" style="flex:1"><button class="btn sm p" id="upaddchar">+ Add</button></div>
+    <div class="chips" id="upchars"></div>
+    <div class="card"><div class="cbody" style="gap:8px">
+      <div class="t">Mark a line</div>
+      <div class="row">
+        <button class="btn sm" id="up-in">⏐ set start</button>
+        <button class="btn sm" id="up-out">⏐ set end</button>
+        <button class="btn sm p" id="up-add">+ add line</button>
+      </div>
+      <div class="mini" id="up-io">start — / end —</div>
+      <select id="up-linechar"></select>
+      <textarea id="uptext" rows="2" placeholder="What they say (optional)"></textarea>
+    </div></div>
+    <button class="btn sm" id="up-ai">✨ AI transcribe (first 6 min, optional)</button>
+    <div id="uplines" style="display:flex;flex-direction:column;gap:6px"></div>
+    <button class="btn p" id="up-save">SAVE SCENE →</button>
+  </div>
+</div>
+<div class="scr" id="scr-set">
+  <div class="top"><button class="back" data-go="home">‹</button><h2>Settings</h2></div>
+  <div class="card"><div class="cbody">
+    <div class="t">How it works</div>
+    <div class="note">REPLAY STUDIO is inspired by Choicer Voicer: you replace one character's voice with yours while everyone else keeps their original performance. The built-in library uses public-domain films (Night of the Living Dead 1968, Plan 9 from Outer Space 1959, The Little Shop of Horrors 1960) via archive.org. For anything modern, use Create a Scene with a video you own.</div>
+  </div></div>
+  <div class="card"><div class="cbody">
+    <div class="t">Optional: AI transcription for uploads</div>
+    <div class="note">Paste a free Google AI Studio key to auto-transcribe uploaded scenes. It stays on this device. The rest of the app never needs a key.</div>
+    <input id="set-key" placeholder="Google AI Studio key (optional)">
+    <button class="btn sm" id="set-save">Save key</button>
+  </div></div>
+  <div class="card"><div class="cbody">
+    <div class="t">Data</div>
+    <div class="kv"><span>Projects stored</span><b id="set-count">—</b></div>
+    <button class="btn sm d" id="set-clear">Delete everything</button>
+  </div></div>
+</div>
+</div>
+<div class="modal" id="pv"><div class="mbox" id="pvbox"></div></div>
+<div class="toast" id="toast"></div>
+<script>
+const $=s=>document.querySelector(s),$$=s=>[...document.querySelectorAll(s)];
+const fmt=t=>{t=Math.max(0,Math.floor(t));return Math.floor(t/60)+':'+String(t%60).padStart(2,'0')};
+let toastT;function toast(m){const t=$('#toast');t.textContent=m;t.classList.add('on');clearTimeout(toastT);toastT=setTimeout(()=>t.classList.remove('on'),2600)}
+/* ---------- SCENE LIBRARY (public-domain films) ---------- */
+const SCENES=[
+{id:'tease',film:'Night of the Living Dead',year:1968,title:'They\u2019re Coming to Get You, Barbra',genre:'Horror',dur:132,
+thumb:'media/notld_tease.jpg',video:'media/notld_tease.mp4',
+blurb:'The graveyard. Johnny teases his sister one joke too far \u2014 and stops joking too late. The most famous scene in horror, and now it\u2019s yours.',
+chars:{J:{n:'Johnny',c:'#f59e0b'},B:{n:'Barbra',c:'#f43f5e'}},
+lines:[['J',7.0,8.84,'I wonder how many times we bought the same one?'],
+['J',26.3,28.78,'Hey, come on, Barb. Church was this morning, huh?'],
+['J',48.35,52.02,'Hey, I mean, praying\u2019s for church, huh? Come on.'],
+['B',53.2,55.06,'I haven\u2019t seen you in church lately.'],
+['J',55.3,58.5,'Well, not much sense in my going to church.'],
+['J',62.0,64.26,'Do you remember one time when we were small, we were out here?'],
+['J',64.76,72.87,'It was from right over there. I jumped out at you from behind the tree, and Grandpa got all excited and whipped us both with his cane.'],
+['J',73.83,75.92,'Remember that? Right over there.'],
+['J',77.17,79.29,'Well, you used to really be scared here.'],
+['B',79.8,80.95,'Johnny.'],
+['J',81.38,82.89,'And you\u2019re still afraid.'],
+['B',83.09,85.02,'Stop it, now. I mean it.'],
+['J',89.2,91.56,'They\u2019re coming to get you, Barbra!'],
+['B',92.01,94.12,'Stop it. You\u2019re ignorant.'],
+['J',95.0,97.05,'They\u2019re coming for you, Barbra.'],
+['B',97.29,99.38,'Stop it. You\u2019re acting like a child.'],
+['J',100.0,101.18,'They\u2019re coming for you.'],
+['J',101.8,103.65,'Look, there comes one of them now!'],
+['B',105.66,106.86,'He\u2019ll hear you.'],
+['J',107.02,109.34,'Here he comes now. I\u2019m getting out of here.'],
+['B',109.42,110.35,'Johnny!'],
+['J',117.2,119.1,'No! No!'],
+['B',120.2,122.7,'Johnny! Help me!']]},
+{id:'plot',film:'Night of the Living Dead',year:1968,title:'The Family Plot',genre:'Horror',dur:66,
+thumb:'media/notld_plot.jpg',video:'media/notld_plot.mp4',
+blurb:'A brother and sister bicker their way to the family grave. Warm, fast and funny \u2014 a perfect first scene.',
+chars:{J:{n:'Johnny',c:'#f59e0b'},B:{n:'Barbra',c:'#f43f5e'}},
+lines:[['J',7.35,10.23,'They oughta make the day the time changes the first day of summer.'],
+['B',10.42,11.3,'What?'],
+['J',11.46,13.36,'Well, it\u2019s 8:00 and it\u2019s still light.'],
+['J',13.8,19.76,'A lot of good the extra daylight does us. Now we\u2019ve still got a three-hour drive back. We\u2019re not going to be home until after midnight.'],
+['B',20.16,22.93,'Well, if it really bugged you, Johnny, you wouldn\u2019t do it.'],
+['J',23.25,25.45,'You think I want to blow Sunday on a scene like this?'],
+['J',26.7,30.64,'You know, I figure we\u2019re either going to have to move Mother out here, or move the grave in.'],
+['B',30.8,33.24,'Well, she can\u2019t make a trip like this.'],
+['J',33.45,35.08,'Oh, no, that she can\u2019t.'],
+['J',35.34,37.02,'Is there any of that candy left?'],
+['B',37.74,38.4,'No.'],
+['J',39.38,40.9,'Look at this thing, would you. We still remember.'],
+['B',41.0,41.7,'I don\u2019t.'],
+['J',41.9,44.65,'You know, I don\u2019t even remember what the man looks like.'],
+['B',44.79,46.84,'Johnny, it takes you five minutes.'],
+['J',47.05,55.75,'Yeah, five minutes to put the wreath on the grave, and six hours to drive back and forth.'],
+['B',56.3,58.45,'Well, we\u2019re here, John, all right.']]},
+{id:'minds',film:'Plan 9 from Outer Space',year:1959,title:'Stupid, Stupid Minds',genre:'Science Fiction',dur:170,
+thumb:'media/plan9_minds.jpg',video:'media/plan9_minds.mp4',
+blurb:'Aboard the flying saucer, the alien Eros explains why Earth must be stopped. Widely beloved as the worst film ever made \u2014 which makes it the best film to voice.',
+chars:{E:{n:'Eros',c:'#38bdf8'},T:{n:'Jeff Trent',c:'#34d399'},X:{n:'Col. Edwards',c:'#fb923c'}},
+lines:[['E',3.8,4.8,'She\u2019s only fainted.'],
+['T',6.9,7.8,'You fiend.'],
+['E',8.9,9.7,'I? A fiend?'],
+['E',10.9,11.6,'A fiend?'],
+['E',13.1,15.8,'I am a soldier of our planet.'],
+['E',17.8,19.0,'I, a fiend?'],
+['E',21.3,22.7,'We did not come here as enemies.'],
+['E',23.5,26.8,'We came only with friendly intentions. To talk. To ask your aid.'],
+['T',28.2,29.1,'Our aid?'],
+['E',30.3,30.9,'Yes.'],
+['E',32.0,33.6,'Your aid. For the whole universe.'],
+['E',35.2,38.0,'But your governments of Earth refused even to accept our existence.'],
+['E',39.1,42.7,'Even though you\u2019ve seen us, heard our messages, you still refuse to accept us.'],
+['T',45.2,48.5,'Why is it so important that you want to contact the governments of our Earth?'],
+['E',48.9,49.9,'Because of death.'],
+['E',51.4,53.7,'Because all you of Earth are idiots!'],
+['X',54.5,55.7,'Now you just hold on, Buster!'],
+['E',55.8,57.1,'No, you hold on.'],
+['E',57.4,59.4,'First was your firecracker. A harmless explosive.'],
+['E',60.7,61.8,'Then your hand grenade.'],
+['E',62.9,65.2,'They began to kill your own people, a few at a time.'],
+['E',67.0,67.9,'Then the bomb.'],
+['E',69.1,70.4,'Then a larger bomb. Many people are killed at one time.'],
+['E',74.7,76.8,'Then your scientists stumbled upon the atom bomb.'],
+['E',77.9,78.7,'Split the atom.'],
+['E',80.2,83.5,'Then the hydrogen bomb, where you actually explode the air itself.'],
+['E',85.8,91.6,'Now you can bring the total destruction of the entire universe, served by our sun.'],
+['E',92.9,95.9,'The only explosion left is the solaronite.'],
+['T',96.9,98.0,'Why, there\u2019s no such thing.'],
+['E',98.3,101.5,'Perhaps to you. But we\u2019ve known it for centuries.'],
+['E',102.9,105.3,'Your scientists will stumble upon it as they have all the others.'],
+['E',106.9,111.6,'But the juvenile minds which you possess will not comprehend its strength until it\u2019s too late.'],
+['T',113.7,115.3,'You\u2019re way above our heads.'],
+['E',116.9,120.3,'The solaronite is a way to explode the actual particles of sunlight.'],
+['T',121.4,122.5,'Why, that\u2019s impossible.'],
+['E',123.4,127.0,'Even now, your scientists are working on a way to harness the sun\u2019s rays.'],
+['E',128.1,130.2,'The rays of sunlight are minute particles.'],
+['E',131.0,134.7,'Is it so far from your imagination that they cannot do as I have suggested?'],
+['T',135.0,137.8,'Why, a particle of sunlight can\u2019t even be seen or measured.'],
+['E',138.8,140.3,'Can you see or measure an atom?'],
+['E',141.2,142.2,'Yet you can explode one.'],
+['E',143.4,145.1,'A ray of sunlight is made up of many atoms.'],
+['X',145.8,149.6,'So, what if we do develop this solaronite bomb? We\u2019d be even a stronger nation than now.'],
+['E',149.9,150.9,'Stronger.'],
+['E',151.7,156.2,'You see? Your stupid minds. Stupid. Stupid!'],
+['T',157.8,158.9,'Get back here, you jerk!'],
+['X',161.3,162.0,'Let him finish.']]},
+{id:'trophy',film:'The Little Shop of Horrors',year:1960,title:'The Trophy',genre:'Comedy',dur:102,
+thumb:'media/shop_trophy.jpg',video:'media/shop_trophy.mp4',
+blurb:'Mrs. Fishtwinger of the Society of Silent Flower Observers inspects Seymour\u2019s remarkable bloom. A teenage Jack Nicholson waits in the wings.',
+chars:{S:{n:'Seymour',c:'#34d399'},F:{n:'Mrs. Fishtwinger',c:'#a78bfa'},M:{n:'Mushnick',c:'#fb923c'}},
+lines:[['F',3.4,5.4,'Oh, that\u2019s remarkable.'],
+['S',6.74,7.54,'You like?'],
+['F',8.63,11.93,'I neither like nor dislike anything, my goodness.'],
+['F',13.42,18.62,'I happen to represent the Society of Silent Flower Observers of Southern California.'],
+['S',19.05,20.35,'How about that?'],
+['F',21.01,25.61,'Tell me, who created this magnificent bloom?'],
+['S',26.79,27.89,'I did, mate.'],
+['F',29.06,31.16,'And what might your name be?'],
+['S',31.36,32.96,'Seymour Krelboyne. With a K.'],
+['F',33.54,34.34,'Krelboyne?'],
+['S',34.65,35.35,'Krelboyne.'],
+['F',35.89,37.89,'Raised it in a coffee can?'],
+['F',38.58,45.97,'Well, tell me, Mr. Krelboyne, is this a freak, or can more be raised from the seed?'],
+['S',46.09,47.09,'We should live so long.'],
+['F',47.33,49.93,'Well, I don\u2019t think there\u2019s going to be any more. Miss, uh\u2026'],
+['S',50.02,52.32,'Fishtwinger. Mrs. Hortense Fishtwinger.'],
+['F',52.83,55.73,'Ah, I think this is going to be the only one, Mrs. Fishtwinger.'],
+['S',56.26,57.16,'Fishtwinger.'],
+['S',57.94,58.54,'Fishtwinger.'],
+['F',59.1,60.5,'Well, it\u2019s probably indigestible anyway.'],
+['F',63.59,76.46,'At any rate, I have the honor to tell you, Seymour Krelboyne, that you have been selected to receive the annual trophy of the Society of Silent Flower Observers of Southern California.'],
+['S',76.75,77.55,'A trophy? Me?'],
+['M',78.08,79.68,'Such is justice.'],
+['F',80.38,83.98,'Tell me, when do you suppose those large buds will open?'],
+['S',84.64,90.54,'Well, according to what the book says about the plants that I crossed, they should open day after tomorrow.'],
+['F',90.74,94.99,'Ah, very well, then I shall return at that time to present the trophy. Good day.'],
+['S',95.4,95.8,'Good day.']]},
+{id:'dinner',film:'The Little Shop of Horrors',year:1960,title:'Dinner with Ma',genre:'Comedy',dur:66,
+thumb:'media/shop_dinner.jpg',video:'media/shop_dinner.mp4',
+blurb:'Seymour brings Audrey home to meet his mother. The chow mein is bitter, the romance is doomed, and the iron lung demand is non-negotiable.',
+chars:{S:{n:'Seymour',c:'#34d399'},A:{n:'Audrey',c:'#f43f5e'},W:{n:'Ma',c:'#2dd4bf'}},
+lines:[['A',13.05,14.75,'I kind of like this chow mein.'],
+['W',15.2,22.2,'If it tastes a little bitter, it\u2019s because it\u2019s made of Chinese herbs, and it\u2019s flavored with wine.'],
+['S',22.5,25.0,'There ain\u2019t another cook in the whole world like my ma.'],
+['W',25.25,30.95,'That\u2019s what your old man said before the louse ran out on me. And you know, if you\u2019re going to be married, you got to be a good cook.'],
+['A',31.15,32.9,'Well, maybe you could teach me.'],
+['W',33.05,34.8,'Who\u2019s thinkin\u2019 of gettin\u2019 married?'],
+['A',35.0,36.7,'Well, he hasn\u2019t asked me yet.'],
+['W',36.8,37.7,'Who hasn\u2019t?'],
+['A',37.8,38.7,'Seymour.'],
+['W',38.8,46.5,'Seymour\u2019s too young to get married. Look here, a boy\u2019s got to go out and play around a little bit, go out on the make, have a ball.'],
+['S',47.0,50.1,'Ma, I don\u2019t want to have a ball. I want to be with Audrey.'],
+['W',50.1,51.54,'Oh, no, Seymour!'],
+['W',51.54,55.35,'You promised you wouldn\u2019t get married until you bought me an iron lung.'],
+['S',55.35,57.5,'Well, you\u2019ve been breathing for years, Ma.'],
+['W',57.6,61.15,'Well, it ain\u2019t easy. It ain\u2019t easy, son.']]}];
+const GENRES=['All','Horror','Science Fiction','Comedy','Romance','Drama','Action','Fantasy','Animation','Superhero','Adventure'];
+/* ---------- storage ---------- */
+let db;const IDB=()=>new Promise((res,rej)=>{if(db)return res(db);const r=indexedDB.open('replaystudio',1);r.onupgradeneeded=e=>{const d=e.target.result;if(!d.objectStoreNames.contains('projects'))d.createObjectStore('projects',{keyPath:'id'});if(!d.objectStoreNames.contains('vids'))d.createObjectStore('vids',{keyPath:'id'})};r.onsuccess=()=>{db=r.result;res(db)};r.onerror=()=>rej(r.error)});
+const tx=(st,mode,fn)=>IDB().then(d=>new Promise((res,rej)=>{const t=d.transaction(st,mode),r=t.objectStore(st);let out=r[fn.a](...(fn.v||[]));if(fn.put){out.onsuccess=()=>{r.put(fn.put(out.result)).onsuccess=()=>res(fn.put(out.result))}}else{t.oncomplete=()=>res(fn.all?out.result:null);t.onerror=()=>rej(t.error)}}));
+const dbPut=(st,v)=>IDB().then(d=>new Promise((res,rej)=>{const t=d.transaction(st,'readwrite');t.objectStore(st).put(v);t.oncomplete=()=>res(1);t.onerror=()=>rej(t.error)}));
+const dbAll=st=>IDB().then(d=>new Promise((res,rej)=>{const t=d.transaction(st,'readonly'),q=t.objectStore(st).getAll();t.oncomplete=()=>res(q.result);t.onerror=()=>rej(t.error)}));
+const dbGet=(st,k)=>IDB().then(d=>new Promise((res,rej)=>{const t=d.transaction(st,'readonly'),q=t.objectStore(st).get(k);t.oncomplete=()=>res(q.result);t.onerror=()=>rej(t.error)}));
+const dbDel=(st,k)=>IDB().then(d=>new Promise((res,rej)=>{const t=d.transaction(st,'readwrite');t.objectStore(st).delete(k);t.oncomplete=()=>res(1);t.onerror=()=>rej(t.error)}));
+const LS={get:(k,d)=>{try{const v=localStorage.getItem(k);return v==null?d:JSON.parse(v)}catch(e){return d}},set:(k,v)=>{try{localStorage.setItem(k,JSON.stringify(v))}catch(e){}}};
+let CUSTOM=[]; // custom scenes loaded from vids store
+const sceneById=id=>SCENES.find(s=>s.id===id)||CUSTOM.find(s=>s.id===id);
+const newId=()=>Date.now().toString(36)+Math.random().toString(36).slice(2,8);
+/* ---------- router ---------- */
+function go(v){$$('.scr').forEach(s=>s.classList.remove('on'));$('#scr-'+v).classList.add('on');window.scrollTo(0,0);
+ if(v==='home')renderHome();if(v==='lib')renderLib();if(v==='recs')renderRecs();if(v==='favs')renderFavs();if(v==='set')renderSet();if(v==='up')resetUpload()}
+document.addEventListener('click',e=>{const g=e.target.closest('[data-go]');if(g)go(g.dataset.go)});
+/* ---------- home ---------- */
+function renderHome(){const m=$('#marq');if(!m.children.length)for(let i=0;i<9;i++){const b=document.createElement('i');b.style.animationDelay=(i*.09)+'s';m.appendChild(b)}
+ const rec=LS.get('rs_recent',[]).map(r=>({r,s:sceneById(r.id)})).filter(x=>x.s).slice(0,3);
+ $('#recent').innerHTML=rec.length?'<h2 style="margin-top:6px">Recently played</h2><div class="grid">'+rec.map(x=>'<div class="tile" data-open="'+x.s.id+'"><b>'+x.s.title+'</b><span>'+x.s.film+' · '+x.r.when+'</span></div>').join('')+'</div>':''}
+/* ---------- library ---------- */
+let libG='All';
+function renderLib(){$('#genres').innerHTML=GENRES.map(g=>'<div class="chip'+(g===libG?' on':'')+'" data-g="'+g+'">'+g+'</div>').join('');
+ renderSceneList()}
+function renderSceneList(){const q=($('#q').value||'').toLowerCase();
+ const all=[...SCENES,...CUSTOM];
+ const list=all.filter(s=>(libG==='All'||(s.genre||'').includes(libG))&&(!q||(s.title+' '+s.film+' '+Object.values(s.chars).map(c=>c.n).join(' ')).toLowerCase().includes(q)));
+ $('#scenelist').innerHTML=list.length?list.map(sceneCard).join(''):'<div class="empty">No scenes match. Try another search, or Create a Scene from your own video.</div>';
+ $$('#scenelist [data-open]').forEach(el=>el.onclick=()=>openSetup(el.dataset.open));
+ $$('#scenelist [data-prev]').forEach(el=>el.onclick=e=>{e.stopPropagation();openPreview(el.dataset.prev)});
+ $$('#scenelist [data-fav]').forEach(el=>el.onclick=e=>{e.stopPropagation();toggleSceneFav(el.dataset.fav)})}
+function sceneCard(s){const fav=(LS.get('rs_fav',[]).includes(s.id))?'★':'☆';
+ const chars=Object.values(s.chars).map(c=>'<span class="dot"><i style="background:'+c.c+'"></i>'+c.n+'</span>').join('');
+ return '<div class="card rel"><img class="th" src="'+s.thumb+'" alt=""><button class="fav" data-fav="'+s.id+'">'+fav+'</button><div class="cbody">'+
+ '<div class="t">'+s.title+'</div><div class="meta"><span class="badge">'+s.film+' ('+s.year+')</span><span class="badge">'+fmt(s.dur)+'</span><span class="badge">'+s.lines.length+' lines</span><span class="badge">'+(s.genre||'Custom')+'</span></div>'+
+ '<div class="dots">'+chars+'</div>'+
+ '<div class="row"><button class="btn sm" data-prev="'+s.id+'">▶ Preview</button><button class="btn sm p" data-open="'+s.id+'" style="flex:1">Start voiceover</button></div></div></div>'}
+function toggleSceneFav(id){let f=LS.get('rs_fav',[]);f=f.includes(id)?f.filter(x=>x!==id):f.concat(id);LS.set('rs_fav',f);renderSceneList();if($('#scr-favs').classList.contains('on'))renderFavs()}
+function openPreview(id){const s=sceneById(id);$('#pvbox').innerHTML='<div class="t" style="font-weight:700">'+s.title+'</div><div class="meta"><span class="badge">'+s.film+' ('+s.year+')</span><span class="badge">'+fmt(s.dur)+'</span></div>'+
+ '<video src="'+s.videoURL+'" controls playsinline></video><div class="note">'+s.blurb+'</div><div class="dots">'+Object.values(s.chars).map(c=>'<span class="dot"><i style="background:'+c.c+'"></i>'+c.n+'</span>').join('')+'</div>'+
+ '<button class="btn p" data-open="'+s.id+'">Start voiceover →</button>';$('#pv').classList.add('on');
+ $$('#pvbox [data-open]').forEach(el=>el.onclick=()=>{$('#pv').classList.remove('on');$('#pvbox video').pause();openSetup(el.dataset.open)})}
+$('#pv').onclick=e=>{if(e.target.id==='pv'){$('#pv').classList.remove('on');const v=$('#pvbox video');if(v)v.pause()}};
+/* ---------- setup ---------- */
+let SU={scene:null,chars:[],mode:'solo',perfs:{}};
+function openSetup(id){const s=sceneById(id);SU={scene:s,chars:[],mode:'solo',perfs:{}};
+ $('#su-film').textContent=s.title;$('#su-meta').innerHTML='<span class="badge">'+s.film+' ('+s.year+')</span><span class="badge">'+fmt(s.dur)+'</span><span class="badge">'+s.lines.length+' lines</span>';
+ $('#su-blurb').textContent=s.blurb;$('#su-title').textContent='Cast yourself';
+ $('#su-chars').innerHTML=Object.entries(s.chars).map(([k,c])=>'<div class="chip" data-c="'+k+'"><i style="display:inline-block;width:9px;height:9px;border-radius:50%;background:'+c.c+';margin-right:6px"></i>'+c.n+'</div>').join('');
+ $$('#su-chars .chip').forEach(el=>el.onclick=()=>{const k=el.dataset.c;const i=SU.chars.indexOf(k);if(i>=0)SU.chars.splice(i,1);else SU.chars.push(k);el.classList.toggle('on');renderPerfs()});
+ $$('#su-mode button').forEach(b=>{b.onclick=()=>{$$('#su-mode button').forEach(x=>x.classList.remove('on'));b.classList.add('on');SU.mode=b.dataset.m;renderPerfs()}});
+ go('setup')}
+function renderPerfs(){const box=$('#su-perfs');if(SU.mode==='friends'&&SU.chars.length){box.style.display='flex';
+ box.innerHTML='<div class="note">Who performs each character? (Leave blank and it stays unnamed.)</div>'+SU.chars.map(k=>{const c=SU.scene.chars[k];return '<input data-p="'+k+'" placeholder="Performer for '+c.n+' (optional)" value="'+(SU.perfs[k]||'')+'">'}).join('');
+ $$('#su-perfs input').forEach(i=>i.oninput=()=>SU.perfs[i.dataset.p]=i.value)}else box.style.display='none'}
+$('#su-go').onclick=()=>{if(!SU.chars.length){toast('Pick at least one character to voice');return}startStudio(SU.scene,{chars:[...SU.chars],mode:SU.mode,perfs:{...SU.perfs}})};
+/* ---------- studio ---------- */
+let ST=null,AB='mine';
+function startStudio(scene,opts,proj){
+ initAudio();
+ ST={scene,chars:opts.chars,mode:opts.mode,perfs:opts.perfs||{},projId:proj?proj.id:null,
+  takes:{},practice:false,flow:false,pending:null,sIdx:-1,played:new Set(),recState:'idle',recChunks:[],cur:null,thumb:proj?proj.thumb:null};
+ if(proj){ST.takes=proj.takes||{};ST.thumb=proj.thumb}
+ const v=$('#vid');v.src=scene.videoURL;v.controls=false;v.muted=false;
+ $('#st-name').textContent=scene.title;
+ $('#st-mode').textContent=ST.mode==='solo'?('SOLO · '+scene.chars[ST.chars[0]].n):(ST.mode==='multi'?'MULTI':'FRIENDS');
+ $('#b-practice').textContent='Practice: off';$('#b-flow').textContent='One-take: off';
+ $('#v-scene').value=85;$('#v-voice').value=100;
+ buildStrip();renderLineList();updButtons();setCur(null);
+ const slot=$('#st-vslot');if(slot&&!slot.contains(v))slot.prepend(v);
+ go('studio');
+ v.onloadedmetadata=()=>{$('#tdur').textContent=fmt(v.duration);if(!ST.thumb)captureThumb()};
+ if(v.readyState>=2)$('#tdur').textContent=fmt(v.duration);
+ LS.set('rs_recent',[{id:scene.id,when:new Date().toLocaleDateString()},...LS.get('rs_recent',[]).filter(r=>r.id!==scene.id)].slice(0,6));
+}
+function mine(L){return ST.chars.includes(L[0])}
+function captureThumb(){const v=$('#vid');if(!v.videoWidth)return;try{const c=document.createElement('canvas');c.width=200;c.height=150;c.getContext('2d').drawImage(v,0,0,200,150);ST.thumb=c.toDataURL('image/jpeg',.55)}catch(e){}}
+function buildStrip(){const s=ST.scene,dur=ST.scene.dur;$('#strip').innerHTML=ST.scene.lines.map((L,i)=>{
+ const mineC=mine(L);const c=ST.scene.chars[L[0]].c;
+ return '<div class="segline" data-li="'+i+'" style="left:'+(L[1]/dur*100)+'%;width:'+Math.max(0.6,(L[2]-L[1])/dur*100)+'%;background:'+(mineC?c:'#3a3a44')+';opacity:'+(mineC?0.95:0.5)+'"></div>'}).join('');
+ $$('#strip .segline').forEach(el=>el.onclick=()=>{const L=ST.scene.lines[+el.dataset.li];const v=$('#vid');v.pause();v.currentTime=Math.max(0,L[1]-0.7);resetSched();setCur(L)});
+}
+function renderLineList(){$('#st-lines').innerHTML=ST.scene.lines.map((L,i)=>{
+ const m=mine(L),c=ST.scene.chars[L[0]].c,tk=ST.takes[i];
+ return '<div class="row cardline" data-li="'+i+'" style="padding:8px 10px;border:1px solid var(--line);border-radius:10px;gap:8px;background:'+(m?'rgba(23,201,100,.05)':'transparent')+'">'+
+ '<i style="width:8px;height:8px;border-radius:50%;background:'+c+';flex:none"></i>'+
+ '<div style="flex:1;min-width:0"><div style="font-size:11px;color:'+c+';font-weight:700">'+ST.scene.chars[L[0]].n+(m&&ST.perfs[L[0]]?' · '+ST.perfs[L[0]]:'')+' <span class="mini">'+fmt(L[1])+'</span></div>'+
+ '<div style="font-size:12px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;color:'+(m?'var(--tx)':'var(--dim)')+'">'+L[3]+'</div></div>'+
+ '<span style="flex:none;font-size:12px">'+(m?(tk?'<span style="color:var(--em)">✔</span>':'<span style="color:var(--am)">○</span>'):'<span class="mini">orig</span>')+'</span></div>'}).join('');
+ $$('#st-lines .cardline').forEach(el=>el.onclick=()=>{const L=ST.scene.lines[+el.dataset.li];const v=$('#vid');v.pause();v.currentTime=Math.max(0,L[1]-0.7);resetSched();setCur(L)});
+}
+function setCur(L){ST.cur=L;const card=$('#linecard');
+ if(!L){$('#lc-who').textContent='—';$('#lc-who').style.color='var(--dim)';$('#lc-txt').textContent=ST&&ST.pending?'':'Press play. When it\u2019s your turn, the scene stops and hands you the mic.';updButtons();return}
+ const c=ST.scene.chars[L[0]];$('#lc-who').textContent=c.n+(mine(L)&&ST.perfs[L[0]]?' · '+ST.perfs[L[0]]:'');$('#lc-who').style.color=c.c;
+ $('#lc-txt').textContent=L[3];updButtons()}
+function updButtons(){const L=ST.cur||ST.pending;const has=L&&ST.takes[L.i!==undefined?L.i:ST.scene.lines.indexOf(L)];
+ $('#b-take').disabled=!(L&&ST.takes[idxOf(L)]);$('#b-del').disabled=!(L&&ST.takes[idxOf(L)]);
+ $('#b-rec').className='btn '+(ST.recState==='rec'?'':'rec');
+ $('#b-rec').textContent=ST.recState==='rec'?'■ STOP':'● RECORD';
+ $('#b-play').textContent=$('#vid').paused?'▶ Play':'⏸ Pause'}
+const idxOf=L=>ST.scene.lines.indexOf(L);
+function resetSched(){if(!ST)return;ST.sIdx=-1;ST.played.clear();ST.pending=null;if(ST.activeSrc){try{ST.activeSrc.stop()}catch(e){}ST.activeSrc=null}}
+/* audio */
+let AC=null,master=null,recDest=null,vg=null,srcOK=false,micStream=null,analyser=null;
+function initAudio(){if(AC)return;try{AC=new (window.AudioContext||window.webkitAudioContext)();master=AC.createGain();master.connect(AC.destination);recDest=AC.createMediaStreamDestination();master.connect(recDest);
+ try{const src=AC.createMediaElementSource($('#vid'));vg=AC.createGain();src.connect(vg);vg.connect(master);srcOK=true}catch(e){srcOK=false}}catch(e){AC=null}}
+async function ensureMic(){if(micStream)return true;if(!navigator.mediaDevices||!navigator.mediaDevices.getUserMedia){toast('This browser has no microphone access');return false}
+ try{micStream=await navigator.mediaDevices.getUserMedia({audio:{echoCancellation:true,noiseSuppression:true}});initAudio();if(AC){const s=AC.createMediaStreamSource(micStream);analyser=AC.createAnalyser();analyser.fftSize=256;s.connect(analyser)}return true}
+ catch(e){toast('Microphone blocked. Allow mic access for this site, then reload.');return false}}
+const audioMime=()=>{if(!window.MediaRecorder)return'';for(const m of['audio/mp4','audio/webm;codecs=opus','audio/webm'])if(MediaRecorder.isTypeSupported(m))return m;return''};
+const videoMime=()=>{if(!window.MediaRecorder)return'';for(const m of['video/mp4;codecs=avc1,mp4a','video/mp4','video/webm;codecs=vp9,opus','video/webm'])if(MediaRecorder.isTypeSupported(m))return m;return''};
+function beep(f){try{if(!AC)return;const o=AC.createOscillator(),g=AC.createGain();o.frequency.value=f||880;g.gain.value=.12;o.connect(g);g.connect(AC.destination);o.start();o.stop(AC.currentTime+.09)}catch(e){}}
+function countDown(n,done){let k=n;const el=$('#count');el.textContent=k;beep(700);
+ const iv=setInterval(()=>{k--;if(k<=0){clearInterval(iv);el.textContent='';beep(1100);done()}else{el.textContent=k;beep(700)}},700)}
+/* engine tick */
+const flowLike=()=>ST&&(ST.flow||ST.exporting||AB==='orig');
+function inMyWin(t){return ST.scene.lines.some(L=>mine(L)&&t>=L[1]-0.08&&t<=L[2]+0.3)}
+function playTake(i){const tk=ST.takes[i];if(!tk||!AC)return;if(ST.activeSrc){try{ST.activeSrc.stop()}catch(e){}}
+ const src=AC.createBufferSource();src.buffer=tk.buffer;const g=AC.createGain();g.gain.value=(+$('#v-voice').value/100)*(tk.norm||1);src.connect(g);g.connect(master);src.start();ST.activeSrc=src}
+function tick(){requestAnimationFrame(tick);const v=$('#vid');if(!ST||!v.src)return;
+ if(!v.paused&&ST.recState!=='rec'){const t=v.currentTime,lines=ST.scene.lines;
+  while(ST.sIdx+1<lines.length&&t>=lines[ST.sIdx+1][1]-0.12){ST.sIdx++;const L=lines[ST.sIdx];setCur(L);
+   if(AB!=='orig'&&mine(L)){if(ST.takes[ST.sIdx]&&!ST.played.has(ST.sIdx)){ST.played.add(ST.sIdx);playTake(ST.sIdx)}
+    else if(!ST.takes[ST.sIdx]&&!flowLike()){v.pause();ST.pending=L;setCur(L);updButtons();toast('Your turn — hit RECORD')}}}
+  const win=AB!=='orig'&&inMyWin(t);
+  if(srcOK&&vg){const target=win?0:(+$('#v-scene').value/100);vg.gain.value+= (target-vg.gain.value)*0.25}
+  else{v.muted=win}
+  $('#tcur').textContent=fmt(t);
+  if(ST.exporting&&ST.expCtx){ST.expCtx.g.drawImage(v,0,0,ST.expCtx.c.width,ST.expCtx.c.height);const p=Math.min(100,t/ST.scene.dur*100);$('#expbar i').style.width=p+'%'}
+ } else if(srcOK&&vg&&!ST.exporting){vg.gain.value+=(+$('#v-scene').value/100-vg.gain.value)*0.25}
+ drawMeter()}
+function drawMeter(){const c=$('#meter');if(!c)return;const g=c.getContext('2d');const w=c.width=c.clientWidth*2,h=c.height=88;g.clearRect(0,0,w,h);
+ g.strokeStyle='rgba(23,201,100,.85)';g.lineWidth=3;g.beginPath();
+ if(analyser){const d=new Uint8Array(analyser.fftSize);analyser.getByteTimeDomainData(d);
+  for(let i=0;i<d.length;i++){const x=i/d.length*w,y=h/2+((d[i]-128)/128)*(h/2-4);i?g.lineTo(x,y):g.moveTo(x,y)}}
+ else{g.moveTo(0,h/2);g.lineTo(w,h/2)}
+ g.stroke()}
+/* transport */
+$('#b-play').onclick=()=>{const v=$('#vid');if(!ST)return;
+ if(v.paused){if(v.ended||v.currentTime>=ST.scene.dur-0.05)v.currentTime=0;initAudio();if(AC&&AC.state==='suspended')AC.resume();resetSched();ST.pending=null;v.play()}else v.pause();updButtons()};
+$('#vid').onpause=()=>{if(ST){updButtons()}};
+$('#vid').onseeking=()=>{if(ST)resetSched()};
+$('#vid').onended=()=>{if(!ST)return;if(ST.flowRec){stopFlow();return}if(ST.exporting){finishExport();return}updButtons();toast('Scene over — hit Finish to mix and export, or replay lines from the list')};
+$('#b-rec').onclick=async()=>{if(!ST)return;
+ if(ST.recState==='rec'){stopRec();return}
+ if(ST.flow){if(ST.flowRec){return}startFlow();return}
+ if(!ST.pending){toast('Press play — the scene stops on your lines');return}
+ startRec()};
+async function startRec(){const i=ST.sIdx>=0?ST.sIdx:ST.scene.lines.indexOf(ST.pending);const L=ST.pending;
+ if(!await ensureMic())return;initAudio();if(AC&&AC.state==='suspended')AC.resume();
+ countDown(3,()=>{ST.recState='rec';ST.recChunks=[];ST.recLine=i;
+  const mr=new MediaRecorder(micStream,audioMime()?{mimeType:audioMime()}:{});ST.mr=mr;
+  mr.ondataavailable=e=>{if(e.data.size)ST.recChunks.push(e.data)};
+  mr.onstop=()=>saveTake(mr.mimeType||audioMime()||'audio/webm');
+  mr.start();updButtons();
+  ST.recTimer=setTimeout(()=>stopRec(),(L[2]-L[1])*1000+650)})}
+function stopRec(){if(ST.recState!=='rec')return;clearTimeout(ST.recTimer);ST.recState='decode';$('#b-rec').textContent='…';try{ST.mr.stop()}catch(e){}}
+async function saveTake(mime){const L=ST.scene.lines[ST.recLine];const blob=new Blob(ST.recChunks,{type:mime});ST.recChunks=[];
+ let buf=null;try{buf=await AC.decodeAudioData(await blob.arrayBuffer())}catch(e){toast('Couldn\u2019t decode that take — try again');ST.recState='idle';ST.pending=null;updButtons();return}
+ let peak=0;const d=buf.getChannelData(0);for(let i=0;i<d.length;i+=16){const a=Math.abs(d[i]);if(a>peak)peak=a}
+ const norm=peak>0.001?Math.min(3,0.9/peak):1;const dur=buf.duration;
+ if(ST.practice){const src=AC.createBufferSource();src.buffer=buf;const g=AC.createGain();g.gain.value=norm;src.connect(g);g.connect(master);src.start();toast('Practice take — plays once, then vanishes');ST.recState='idle';ST.pending=null;updButtons();return}
+ ST.takes[ST.recLine]={blob,buffer:buf,dur,norm};ST.recState='idle';ST.pending=null;
+ const v=$('#vid');if(v.currentTime<L[2])v.currentTime=L[2];
+ saveProject();renderLineList();buildStrip();setCur(L);toast('Take saved ('+dur.toFixed(1)+'s, line is '+(L[2]-L[1]).toFixed(1)+'s)')}
+$('#b-take').onclick=()=>{if(ST&&ST.cur&&ST.takes[idxOf(ST.cur)])playTake(idxOf(ST.cur))};
+$('#b-del').onclick=()=>{if(ST&&ST.cur&&ST.takes[idxOf(ST.cur)]){delete ST.takes[idxOf(ST.cur)];saveProject();renderLineList();buildStrip();toast('Take deleted')}};
+$('#b-practice').onclick=()=>{ST.practice=!ST.practice;$('#b-practice').textContent='Practice: '+(ST.practice?'on':'off');toast(ST.practice?'Practice mode: takes play back once, nothing is saved':'Recording saves again')};
+$('#b-flow').onclick=()=>{ST.flow=!ST.flow;$('#b-flow').textContent='One-take: '+(ST.flow?'on':'off');
+ toast(ST.flow?'One-take: record the whole scene in one continuous pass. Headphones recommended.':'Back to line-by-line')};
+$('#v-scene').oninput=()=>{};$('#v-voice').oninput=()=>{};
+/* ---------- one-take flow ---------- */
+async function startFlow(){if(!await ensureMic())return;initAudio();if(AC&&AC.state==='suspended')AC.resume();
+ countDown(3,()=>{ST.flowRec=true;ST.recChunks=[];const mr=new MediaRecorder(micStream,audioMime()?{mimeType:audioMime()}:{});ST.mr=mr;
+  mr.ondataavailable=e=>{if(e.data.size)ST.recChunks.push(e.data)};mr.onstop=()=>finishFlow(mr.mimeType||'audio/webm');
+  mr.start();const v=$('#vid');v.currentTime=0;resetSched();v.play();$('#b-rec').textContent='■ STOP';updButtons();toast('Performing the whole scene — go!')})}
+function stopFlow(){if(!ST||!ST.flowRec)return;ST.flowRec=false;$('#b-rec').textContent='…';try{ST.mr.stop()}catch(e){}$('#vid').pause()}
+async function finishFlow(mime){const blob=new Blob(ST.recChunks,{type:mime});ST.recChunks=[];let saved=0;
+ try{const buf=await AC.decodeAudioData(await blob.arrayBuffer());
+  ST.scene.lines.forEach((L,i)=>{if(!mine(L))return;const sr=buf.sampleRate,a=Math.floor(Math.max(0,L[1])*sr),b=Math.floor(Math.min(buf.duration,L[2]+0.5)*sr);if(b<=a)return;
+   const nb=AC.createBuffer(1,b-a,sr);nb.getChannelData(0).set(buf.getChannelData(0).subarray(a,b));
+   let peak=0;const d=nb.getChannelData(0);for(let k=0;k<d.length;k+=16){const x=Math.abs(d[k]);if(x>peak)peak=x}
+   ST.takes[i]={blob:encodeWAV(nb),buffer:nb,dur:(b-a)/sr,norm:peak>0.001?Math.min(3,0.9/peak):1};saved++});
+  saveProject();renderLineList();buildStrip();toast('One-take done — '+saved+' of your lines captured')}catch(e){toast('Couldn\u2019t decode the take')}
+ ST.recState='idle';updButtons()}
+function encodeWAV(buf){const n=buf.length,ch=buf.getChannelData(0),bytes=new DataView(new ArrayBuffer(44+n*2));
+ const ws=(o,s)=>{for(let i=0;i<s.length;i++)bytes.setUint8(o+i,s.charCodeAt(i))};
+ ws(0,'RIFF');bytes.setUint32(4,36+n*2,true);ws(8,'WAVE');ws(12,'fmt ');bytes.setUint32(16,16,true);bytes.setUint16(20,1,true);bytes.setUint16(22,1,true);bytes.setUint32(24,buf.sampleRate,true);bytes.setUint32(28,buf.sampleRate*2,true);bytes.setUint16(32,2,true);bytes.setUint16(34,16,true);ws(36,'data');bytes.setUint32(40,n*2,true);
+ for(let i=0;i<n;i++){const s=Math.max(-1,Math.min(1,ch[i]));bytes.setInt16(44+i*2,s*32767,true)}return new Blob([bytes],{type:'audio/wav'})}
+/* ---------- finish / result ---------- */
+$('#b-done').onclick=async()=>{if(!ST)return;await saveProject();const v=$('#vid');v.pause();
+ let slot=$('#rs-slot');if(!slot){slot=document.createElement('div');slot.id='rs-slot';$('#ab').before(slot)}
+ slot.appendChild(v);v.controls=true;AB='mine';$$('#ab button').forEach(b=>b.classList.toggle('on',b.dataset.v==='mine'));
+ renderResultLines();go('result');updButtons()};
+$('#rs-back').onclick=()=>{const v=$('#vid');v.pause();$('#st-vslot').prepend(v);v.controls=false;go('studio')};
+$$('#ab button').forEach(b=>b.onclick=()=>{$$('#ab button').forEach(x=>x.classList.remove('on'));b.classList.add('on');AB=b.dataset.v;resetSched();const v=$('#vid');if(!v.paused){v.currentTime=0;v.play()}});
+function renderResultLines(){const s=ST.scene;$('#rs-lines').innerHTML=s.lines.map((L,i)=>{
+ if(!mine(L))return'<div style="font-size:12px;color:var(--dim)">'+s.chars[L[0]].n+': '+L[3].slice(0,60)+'</div>';
+ const tk=ST.takes[i],c=s.chars[L[0]].c;
+ return '<div data-li="'+i+'" style="font-size:12px;color:'+(tk?'var(--tx)':'var(--am)')+';cursor:pointer;padding:6px 8px;border:1px solid var(--line);border-radius:8px">'+(tk?'✔ ':'○ missing — ')+s.chars[L[0]].n+': '+L[3].slice(0,60)+'</div>'}).join('');
+ $$('#rs-lines [data-li]').forEach(el=>el.onclick=()=>{const L=ST.scene.lines[+el.dataset.li];const v=$('#vid');v.currentTime=Math.max(0,L[1]-1);resetSched();if(v.paused)v.play()})}
+$('#b-export').onclick=async()=>{if(!ST||ST.exporting)return;const v=$('#vid');initAudio();if(AC&&AC.state==='suspended')AC.resume();
+ if(!recDest){toast('Audio engine not ready — tap play once, then export');return}
+ const c=document.createElement('canvas');c.width=v.videoWidth||512;c.height=v.videoHeight||384;const g=c.getContext('2d');
+ const cs=c.captureStream(30);const tracks=[...cs.getVideoTracks(),...recDest.stream.getAudioTracks()];
+ const mr=new MediaRecorder(new MediaStream(tracks),videoMime()?{mimeType:videoMime()}:{});ST.expChunks=[];ST.expCtx={c,g};ST.exporting=true;ST.expMR=mr;
+ mr.ondataavailable=e=>{if(e.data.size)ST.expChunks.push(e.data)};mr.onstop=()=>exportDone(mr.mimeType||'video/webm');
+ $('#expbar').style.display='block';$('#expout').innerHTML='<div class="note">Mixing the final cut in real time — keep this screen open until it finishes.</div>';
+ v.currentTime=0;resetSched();mr.start(1000);v.play()};
+function finishExport(){if(!ST||!ST.exporting)return;setTimeout(()=>{try{ST.expMR.stop()}catch(e){}},400)}
+async function exportDone(mime){ST.exporting=false;ST.expCtx=null;$('#expbar').style.display='none';
+ const blob=new Blob(ST.expChunks,{type:mime});ST.expChunks=[];const url=URL.createObjectURL(blob);const ext=(mime||'').includes('mp4')?'mp4':'webm';
+ $('#expout').innerHTML='<a class="btn p" style="display:block;text-align:center;text-decoration:none" href="'+url+'" download="'+(ST.projName||'replay-studio')+'.'+ext+'">⬇ Save video ('+(blob.size/1048576).toFixed(1)+' MB '+ext+')</a><div class="mini" style="margin-top:6px">The performance also stays saved in My Recordings.</div>';
+ const rec=ST.projRec;if(rec){rec.exported=blob;await dbPut('projects',rec)}toast('Export complete')}
+/* ---------- projects ---------- */
+async function saveProject(){const s=ST.scene;
+ if(!ST.projName)ST.projName=s.title+' — '+ST.chars.map(k=>s.chars[k].n).join(' + ');
+ const rec={id:ST.projId||newId(),name:ST.projName,sceneId:s.id,sceneDef:s.custom?JSON.parse(JSON.stringify(Object.assign({},s,{videoURL:undefined}))):null,vidId:s.vidId||null,
+  chars:[...ST.chars],mode:ST.mode,perfs:Object.assign({},ST.perfs),takes:{},thumb:ST.thumb,created:ST.projRec?ST.projRec.created:Date.now(),fav:ST.projRec?ST.projRec.fav:false,exported:ST.projRec?ST.projRec.exported||null:null,dur:s.dur};
+ for(const k in ST.takes){const t=ST.takes[k];rec.takes[k]={blob:t.blob,dur:t.dur,norm:t.norm}}
+ ST.projId=rec.id;ST.projRec=rec;await dbPut('projects',rec);return rec}
+async function openProject(pid){const p=await dbGet('projects',pid);if(!p){toast('Project not found');return}
+ let s=sceneById(p.sceneId);
+ if(!s&&p.sceneDef){const vr=p.vidId?await dbGet('vids',p.vidId):null;if(!vr){toast('The uploaded video was deleted');return}s=Object.assign({},p.sceneDef,{videoURL:URL.createObjectURL(vr.blob)})}
+ if(!s){toast('Scene not found');return}
+ initAudio();const takes={};for(const k in p.takes){try{const buf=await AC.decodeAudioData(await p.takes[k].blob.arrayBuffer());takes[k]={blob:p.takes[k].blob,buffer:buf,dur:p.takes[k].dur,norm:p.takes[k].norm}}catch(e){}}
+ startStudio(s,{chars:p.chars,mode:p.mode,perfs:p.perfs},Object.assign({},p,{takes}));
+ ST.projName=p.name;ST.projRec=Object.assign({},p,{takes});if(p.exported)ST.projRec.exported=p.exported}
+async function renderRecs(){const all=(await dbAll('projects')).sort((a,b)=>b.created-a.created);
+ $('#recs').innerHTML=all.length?all.map(recCard).join(''):'<div class="empty">No performances yet.<br>Pick a scene from the library and record your first.</div>';
+ $$('#recs [data-open]').forEach(el=>el.onclick=()=>openProject(el.dataset.open));
+ $$('#recs [data-ren]').forEach(el=>el.onclick=async()=>{const p=await dbGet('projects',el.dataset.ren);const n=prompt('Project name',p.name);if(n){p.name=n;await dbPut('projects',p);renderRecs()}});
+ $$('#recs [data-del]').forEach(el=>el.onclick=async()=>{const p=await dbGet('projects',el.dataset.del);if(confirm('Delete "'+p.name+'"? This can\u2019t be undone.')){await dbDel('projects',el.dataset.del);renderRecs()}});
+ $$('#recs [data-favp]').forEach(el=>el.onclick=async()=>{const p=await dbGet('projects',el.dataset.favp);p.fav=!p.fav;await dbPut('projects',p);renderRecs()})}
+function recCard(p){const chars=(p.chars||[]).map(k=>{const s=sceneById(p.sceneId)||p.sceneDef;const c=s&&s.chars&&s.chars[k];return c?c.n:k}).join(', ');
+ const took=Object.keys(p.takes||{}).length;
+ return '<div class="card rel"><div class="row" style="padding:10px;gap:10px">'+
+ (p.thumb?'<img src="'+p.thumb+'" style="width:96px;height:72px;object-fit:cover;border-radius:10px;flex:none">':'<div style="width:96px;height:72px;background:#000;border-radius:10px;flex:none"></div>')+
+ '<div style="flex:1;min-width:0"><div class="t" style="font-size:14px">'+p.name+'</div><div class="meta"><span class="badge">'+fmt(p.dur||0)+'</span><span class="badge">'+took+' lines voiced</span><span class="badge">'+new Date(p.created).toLocaleDateString()+'</span></div><div class="mini" style="margin-top:3px">'+chars+'</div></div>'+
+ '<button class="fav" data-favp="'+p.id+'" style="position:static">'+(p.fav?'★':'☆')+'</button></div>'+
+ '<div class="row" style="padding:0 10px 10px"><button class="btn sm p" data-open="'+p.id+'" style="flex:1">Open</button>'+
+ (p.exported?'<a class="btn sm" href="'+URL.createObjectURL(p.exported)+'" download="'+p.name+'.mp4" style="text-decoration:none">⬇</a>':'')+
+ '<button class="btn sm" data-ren="'+p.id+'">✎</button><button class="btn sm d" data-del="'+p.id+'">🗑</button></div></div>'}
+async function renderFavs(){const fs=LS.get('rs_fav',[]).map(sceneById).filter(Boolean);
+ $('#favscenes').innerHTML=fs.length?fs.map(sceneCard).join(''):'<div class="empty">No favorite scenes yet — tap the star on any scene card.</div>';
+ $$('#favscenes [data-open]').forEach(el=>el.onclick=()=>openSetup(el.dataset.open));
+ $$('#favscenes [data-prev]').forEach(el=>el.onclick=e=>{e.stopPropagation();openPreview(el.dataset.prev)});
+ $$('#favscenes [data-fav]').forEach(el=>el.onclick=e=>{e.stopPropagation();toggleSceneFav(el.dataset.fav)});
+ const all=(await dbAll('projects')).filter(p=>p.fav).sort((a,b)=>b.created-a.created);
+ $('#favrecs').innerHTML=all.length?all.map(recCard).join(''):'<div class="empty">No starred performances yet.</div>';
+ $$('#favrecs [data-open]').forEach(el=>el.onclick=()=>openProject(el.dataset.open))}
+async function renderSet(){$('#set-key').value=LS.get('rs_key','');const all=await dbAll('projects');$('#set-count').textContent=all.length+' project'+(all.length===1?'':'s')}
+$('#set-save').onclick=()=>{LS.set('rs_key',$('#set-key').value.trim());toast('Key saved on this device only')};
+$('#set-clear').onclick=async()=>{if(!confirm('Delete all projects, uploads and settings on this device?'))return;
+ try{const d=await IDB();for(const st of['projects','vids']){const t=d.transaction(st,'readwrite');t.objectStore(st).clear()}}catch(e){}
+ ['rs_key','rs_fav','rs_recent'].forEach(k=>localStorage.removeItem(k));toast('Everything deleted');setTimeout(()=>location.reload(),600)};
+/* ---------- create a scene (upload) ---------- */
+let upBlob=null,upChars={},upLines=[],upIn=null,upOut=null,upDur=0;
+function resetUpload(){upBlob=null;upChars={};upLines=[];upIn=upOut=null;$('#upui').style.display='none';$('#upvid').style.display='none';$('#upvid').removeAttribute('src');$('#upfile').value='';$('#up-io').textContent='start — / end —'}
+$('#upfile').onchange=e=>{const f=e.target.files[0];if(!f)return;upBlob=f;const url=URL.createObjectURL(f);const v=$('#upvid');v.src=url;v.style.display='block';
+ v.onloadedmetadata=()=>{upDur=v.duration;$('#upui').style.display='flex';$('#upname').value=f.name.replace(/\.[^.]+$/,'');renderUpChars();renderUpLines()};
+ v.onerror=()=>toast('That format didn\u2019t open. Try MP4 or WebM.')};
+$('#upaddchar').onclick=()=>{const n=$('#upchar').value.trim();if(!n)return;const id='c'+(Object.keys(upChars).length+1)+'_'+n.replace(/\W/g,'').slice(0,6);upChars[id]={n,c:PAL[Object.keys(upChars).length%PAL.length]};$('#upchar').value='';renderUpChars()};
+function addUpChar(n){for(const k in upChars)if(upChars[k].n===n)return k;const id='c'+(Object.keys(upChars).length+1)+'_'+n.replace(/\W/g,'').slice(0,6);upChars[id]={n,c:PAL[Object.keys(upChars).length%PAL.length]};renderUpChars();return id}
+const PAL=['#17c964','#3b9dff','#f59e0b','#f43f5e','#a78bfa','#2dd4bf','#fb923c','#e879f9'];
+function renderUpChars(){$('#upchars').innerHTML=Object.entries(upChars).map(([k,c])=>'<span class="chip on"><i style="display:inline-block;width:9px;height:9px;border-radius:50%;background:'+c.c+';margin-right:6px"></i>'+c.n+'</span>').join('')||'<span class="mini">No characters yet — add who speaks in your clip.</span>';
+ $('#up-linechar').innerHTML='<option value="">Character…</option>'+Object.entries(upChars).map(([k,c])=>'<option value="'+k+'">'+c.n+'</option>').join('')}
+$('#up-in').onclick=()=>{$('#upvid').pause();upIn=$('#upvid').currentTime;$('#up-io').textContent='start '+upIn.toFixed(1)+'s / end '+(upOut!=null?upOut.toFixed(1)+'s':'—')};
+$('#up-out').onclick=()=>{$('#upvid').pause();upOut=$('#upvid').currentTime;$('#up-io').textContent='start '+(upIn!=null?upIn.toFixed(1)+'s':'—')+' / end '+upOut.toFixed(1)+'s'};
+$('#up-add').onclick=()=>{if(upIn==null||upOut==null||upOut<=upIn){toast('Set a start and an end first');return}
+ const ch=$('#up-linechar').value;if(!ch){toast('Pick or add a character first');return}
+ upLines.push({ch,t0:+upIn,t1:+upOut,text:$('#uptext').value.trim()});upLines.sort((a,b)=>a.t0-b.t0);upIn=upOut=null;$('#uptext').value='';$('#up-io').textContent='start — / end —';renderUpLines()};
+function renderUpLines(){$('#uplines').innerHTML=upLines.length?upLines.map((l,i)=>'<div class="row" style="font-size:12px;padding:6px 0;border-bottom:1px solid var(--line)"><i style="width:8px;height:8px;border-radius:50%;background:'+upChars[l.ch].c+';flex:none"></i><div style="flex:1;min-width:0">'+upChars[l.ch].n+' <span class="mini">'+l.t0.toFixed(1)+'–'+l.t1.toFixed(1)+'s</span><div style="white-space:nowrap;overflow:hidden;text-overflow:ellipsis;color:var(--dim)">'+(l.text||'(no text)')+'</div></div><button class="btn sm d" data-rm="'+i+'">✕</button></div>').join(''):'<div class="mini">No lines marked yet. Play the clip, pause where a line starts, set start and end, add it.</div>';
+ $$('#uplines [data-rm]').forEach(el=>el.onclick=()=>{upLines.splice(+el.dataset.rm,1);renderUpLines()})}
+$('#up-ai').onclick=async()=>{if(!upBlob)return;const key=LS.get('rs_key','');if(!key){toast('Add a Google AI Studio key in Settings first');return}
+ try{toast('Listening to your clip…');const ab=await upBlob.arrayBuffer();const tmp=new (window.AudioContext||window.webkitAudioContext)();const full=await tmp.decodeAudioData(ab);tmp.close&&tmp.close();
+  const maxD=Math.min(360,full.duration);const off=new OfflineAudioContext(1,Math.floor(maxD*16000),16000);const src=off.createBufferSource();src.buffer=full;src.connect(off.destination);src.start(0,0,maxD);const mono=await off.startRendering();
+  const step=100;let added=0;
+  for(let s=0;s<maxD;s+=step){const e=Math.min(maxD,s+step);const a=Math.floor(s*16000),b=Math.floor(e*16000);
+   const sub={length:b-a,sampleRate:16000,getChannelData:()=>mono.getChannelData(0).subarray(a,b)};
+   const b64=await new Promise(r=>{const fr=new FileReader();fr.onload=()=>r(fr.result.split(',')[1]);fr.readAsDataURL(encodeWAV(sub))});
+   const body=JSON.stringify({contents:[{role:'user',parts:[{text:'Transcribe ONLY the spoken dialogue in this film/video audio, in order. For each line: start and end in seconds from the start of THIS audio with two decimals, speaker label SPEAKER_A/SPEAKER_B..., exact words. Return ONLY JSON [{"start":n,"end":n,"speaker":"SPEAKER_A","text":"..."}]. Empty if none.'},{inlineData:{mimeType:'audio/wav',data:b64}}]}],generationConfig:{temperature:0.2,responseMimeType:'application/json'}});
+   const r=await fetch('https://generativelanguage.googleapis.com/v1beta/models/gemini-3.5-flash-lite:generateContent?key='+encodeURIComponent(key),{method:'POST',headers:{'Content-Type':'application/json'},body});
+   const j=await r.json();const txt=((j.candidates||[])[0]||{content:{parts:[]}}).content.parts.map(p=>p.text||'').join('');const A=txt.indexOf('['),B=txt.lastIndexOf(']');
+   if(A>=0&&B>A){let arr;try{arr=JSON.parse(txt.slice(A,B+1))}catch(x){continue}
+    arr.forEach(l=>{if(!l.text)return;const sp=l.speaker||'SPEAKER_A';const id=addUpChar(sp==='SPEAKER_A'?'Speaker A':sp.replace('SPEAKER_','Speaker '));upLines.push({ch:id,t0:s+ +l.start,t1:s+ +(l.end||+l.start+2),text:l.text});added++})}
+   toast('Transcribed '+Math.round(e)+'s of '+Math.round(maxD)+'s…')}
+  upLines.sort((a,b)=>a.t0-b.t0);renderUpLines();toast(added?added+' lines found — check and rename the speakers':'No dialogue found in the first 6 minutes')}
+ catch(err){toast('Transcription failed — mark the lines by hand (it always works)')}};
+$('#up-save').onclick=async()=>{if(!upBlob)return;if(!upLines.length){toast('Mark at least one line');return}
+ const v=$('#upvid');let thumb='';try{const c=document.createElement('canvas');c.width=200;c.height=150;c.getContext('2d').drawImage(v,0,0,200,150);thumb=c.toDataURL('image/jpeg',.55)}catch(e){}
+ const vid=newId();const def={id:vid,custom:true,title:$('#upname').value.trim()||'My scene',film:'My upload',year:'',genre:'Custom',dur:upDur||Math.round(v.duration),thumb:thumb||'media/notld_tease.jpg',vidId:vid,
+  chars:JSON.parse(JSON.stringify(upChars)),lines:upLines.map((l,i)=>[l.ch,+l.t0.toFixed(2),+l.t1.toFixed(2),l.text])};
+ def.videoURL=URL.createObjectURL(upBlob);CUSTOM.push(def);
+ await dbPut('vids',{id:vid,blob:upBlob,name:def.title,def:JSON.parse(JSON.stringify(Object.assign({},def,{videoURL:undefined})))});
+ toast('Scene saved');go('lib')};
+/* ---------- init ---------- */
+(async function(){try{const vids=await dbAll('vids');CUSTOM=vids.filter(v=>v.def).map(v=>{const d=Object.assign({},v.def);d.videoURL=URL.createObjectURL(v.blob);return d})}catch(e){}
+ SCENES.forEach(s=>s.videoURL=s.video);
+ const sv=document.createElement('div');sv.id='st-vslot';$('#vid').before(sv);sv.appendChild($('#vid'));
+ $('#q').oninput=renderSceneList;
+ go('studio');const oldgo=go;go=function(v){if(v==='studio'&&!ST)v='lib';oldgo(v)};go('home');
+ $$('#recent [data-open]').forEach(el=>el.onclick=()=>openSetup(el.dataset.open));
+ tick()})();
+</script></body></html>
