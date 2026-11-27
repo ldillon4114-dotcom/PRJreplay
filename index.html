@@ -705,7 +705,7 @@ function renderSpeakers(stats,pick,prompt){upPick=pick;upPickPrompt=prompt||'';c
   const name=(upPickPrompt&&upPickPrompt.length<=28)?upPickPrompt:('Speaker '+upPick.replace('SPEAKER_',''));
   const oldId=Object.keys(upChars).find(k=>upChars[k].n==='Speaker '+upPick.replace('SPEAKER_',''));
   if(oldId)upChars[oldId].n=name;renderUpChars();
-  const rec=await saveUploadScene();if(rec)openSetup(rec.id,oldId||upPick)}
+  const rec=await saveUploadScene();if(rec)openSetup(rec.id,oldId||upPick)}}
 async function saveUploadScene(){if(!upBlob)return null;if(!upLines.length){toast('Mark at least one line');return null}
  const v=$('#upvid');let thumb='';try{const c=document.createElement('canvas');c.width=200;c.height=150;c.getContext('2d').drawImage(v,0,0,200,150);thumb=c.toDataURL('image/jpeg',.55)}catch(e){}
  const vid=newId();const def={id:vid,custom:true,title:$('#upname').value.trim()||'My scene',film:'My upload',year:'',genre:'Custom',dur:upDur||Math.round(v.duration),thumb:thumb||'media/notld_tease.jpg',vidId:vid,
