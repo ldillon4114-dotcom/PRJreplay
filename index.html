@@ -435,7 +435,8 @@ function openPreview(id){const s=sceneById(id);$('#pvbox').innerHTML='<div class
 $('#pv').onclick=e=>{if(e.target.id==='pv'){$('#pv').classList.remove('on');const v=$('#pvbox video');if(v)v.pause()}};
 /* ---------- setup ---------- */
 let SU={scene:null,chars:[],mode:'solo',perfs:{}};
-function openSetup(id,pre){const s=sceneById(id);SU={scene:s,chars:[],mode:'solo',perfs:{}};
+let upTakeSeed=null;
+function openSetup(id,pre){const s=sceneById(id);SU={scene:s,chars:[],mode:'solo',perfs:{},takes:upTakeSeed||null};upTakeSeed=null;
  $('#su-film').textContent=s.title;$('#su-meta').innerHTML='<span class="badge">'+s.film+' ('+s.year+')</span><span class="badge">'+fmt(s.dur)+'</span><span class="badge">'+s.lines.length+' lines</span>';
  $('#su-blurb').textContent=s.blurb;$('#su-title').textContent='Cast yourself';
  $('#su-chars').innerHTML=Object.entries(s.chars).map(([k,c])=>'<div class="chip" data-c="'+k+'"><i style="display:inline-block;width:9px;height:9px;border-radius:50%;background:'+c.c+';margin-right:6px"></i>'+c.n+'</div>').join('');
@@ -446,7 +447,7 @@ function openSetup(id,pre){const s=sceneById(id);SU={scene:s,chars:[],mode:'solo
 function renderPerfs(){const box=$('#su-perfs');if(SU.mode==='friends'&&SU.chars.length){box.style.display='flex';
  box.innerHTML='<div class="note">Who performs each character? (Leave blank and it stays unnamed.)</div>'+SU.chars.map(k=>{const c=SU.scene.chars[k];return '<input data-p="'+k+'" placeholder="Performer for '+c.n+' (optional)" value="'+(SU.perfs[k]||'')+'">'}).join('');
  $$('#su-perfs input').forEach(i=>i.oninput=()=>SU.perfs[i.dataset.p]=i.value)}else box.style.display='none'}
-$('#su-go').onclick=()=>{if(!SU.chars.length){toast('Pick at least one character to voice');return}startStudio(SU.scene,{chars:[...SU.chars],mode:SU.mode,perfs:{...SU.perfs}})};
+$('#su-go').onclick=()=>{if(!SU.chars.length){toast('Pick at least one character to voice');return}startStudio(SU.scene,{chars:[...SU.chars],mode:SU.mode,perfs:{...SU.perfs}},SU.takes?{takes:SU.takes}:null)};
 /* ---------- studio ---------- */
 let ST=null,AB='mine';
 function startStudio(scene,opts,proj){
@@ -669,47 +670,84 @@ let upEdit=null;
 let upFilter=null;
 function renderUpLines(){const counts={};upLines.forEach(l=>counts[l.ch]=(counts[l.ch]||0)+1);
  const tabs='<div style="display:flex;gap:6px;flex-wrap:wrap;margin:4px 0 8px">'+('<div class="chip'+(upFilter?'':' on')+'" data-f="">All · '+upLines.length+'</div>')+Object.keys(upChars).filter(k=>counts[k]).map(k=>'<div class="chip'+(upFilter===k?' on':'')+'" data-f="'+k+'">'+upChars[k].n+' · '+counts[k]+'</div>').join('')+'</div>';
- $('#uplines').innerHTML=upLines.length?tabs+upLines.map((l,i)=>'<div class="row" style="font-size:12px;padding:6px 0;border-bottom:1px solid var(--line)"><i style="width:8px;height:8px;border-radius:50%;background:'+upChars[l.ch].c+';flex:none"></i><div style="flex:1;min-width:0">'+upChars[l.ch].n+' <span class="mini">'+l.t0.toFixed(1)+'–'+l.t1.toFixed(1)+'s · '+(l.t1-l.t0).toFixed(1)+'s long</span><div style="white-space:nowrap;overflow:hidden;text-overflow:ellipsis;color:var(--dim)">'+(l.text||'(no text)')+'</div></div><button class="btn sm" data-play="'+i+'">▶</button><button class="btn sm" data-edit="'+i+'">✎</button><button class="btn sm d" data-rm="'+i+'">✕</button></div>').join(''):'<div class="mini">'+(upFilter?'No lines for this character yet.':'No lines marked yet. Play the clip, pause where a line starts, set start and end, add it.')+'</div>';
+ $('#uplines').innerHTML=upLines.length?tabs+upLines.map((l,i)=>'<div class="row" style="font-size:12px;padding:6px 0;border-bottom:1px solid var(--line)"><i style="width:8px;height:8px;border-radius:50%;background:'+upChars[l.ch].c+';flex:none"></i><div style="flex:1;min-width:0">'+upChars[l.ch].n+' <span class="mini">'+l.t0.toFixed(1)+'–'+l.t1.toFixed(1)+'s · '+(l.t1-l.t0).toFixed(1)+'s long</span><div style="white-space:nowrap;overflow:hidden;text-overflow:ellipsis;color:var(--dim)">'+(l.text||'(no text)')+'</div></div><button class="btn sm'+(upTakeRec&&upTakeLine===l?'" style="background:#f43f5e':'')+'" data-rec="'+i+'">'+(upTakeRec&&upTakeLine===l?'■ stop':'🎙')+'</button>'+(l.take?'<button class="btn sm" data-take="'+i+'">▷ '+l.take.dur.toFixed(1)+'s</button>':'')+'<button class="btn sm" data-play="'+i+'">▶</button><button class="btn sm" data-edit="'+i+'">✎</button><button class="btn sm d" data-rm="'+i+'">✕</button></div>').join(''):'<div class="mini">'+(upFilter?'No lines for this character yet.':'No lines marked yet. Play the clip, pause where a line starts, set start and end, add it.')+'</div>';
  $$('#uplines [data-rm]').forEach(el=>el.onclick=()=>{upLines.splice(+el.dataset.rm,1);if(upEdit==+el.dataset.rm)upEdit=null;renderUpLines()});
  $$('#uplines [data-f]').forEach(el=>el.onclick=()=>{upFilter=el.dataset.f||null;renderUpLines()});
  $$('#uplines [data-play]').forEach(el=>el.onclick=()=>{const l=upLines[+el.dataset.play];const v=$('#upvid');v.currentTime=Math.max(0,l.t0-0.3);v.play();const st=()=>{if(v.currentTime>=l.t1+0.25){v.pause();v.removeEventListener('timeupdate',st)}};v.addEventListener('timeupdate',st)});
+ $$('#uplines [data-rec]').forEach(el=>el.onclick=()=>upRecToggle(+el.dataset.rec));
+ $$('#uplines [data-take]').forEach(el=>el.onclick=()=>upTakePlay(+el.dataset.take));
  $$('#uplines [data-edit]').forEach(el=>el.onclick=()=>{const i=+el.dataset.edit,l=upLines[i];upEdit=i;upIn=l.t0;upOut=l.t1;$('#up-linechar').value=l.ch;$('#uptext').value=l.text||'';$('#up-io').textContent='editing line '+(i+1)+' — reset start/end below or with the buttons';$('#up-add').textContent='save changes';const v=$('#upvid');v.currentTime=Math.max(0,l.t0-0.5);$('#up-io').scrollIntoView({block:'center'})})}
+upTakeMic=null;upTakeRec=null;upTakeChunks=[];
+async function upRecToggle(i){const l=upLines[i];if(!l)return;
+ if(upTakeRec){try{upTakeRec.stop()}catch(e){};return}
+ const ok=await ensureMic();if(!ok)return;
+ l.take=null;upTakeChunks=[];const mr=new MediaRecorder(micStream,audioMime()?{mimeType:audioMime()}:{});upTakeRec=mr;upTakeLine=l;
+ mr.ondataavailable=ev=>{if(ev.data&&ev.data.size)upTakeChunks.push(ev.data)};
+ mr.onstop=async()=>{upTakeRec=null;renderUpLines();
+  try{const blob=new Blob(upTakeChunks,{type:mr.mimeType||audioMime()||'audio/webm'});upTakeChunks=[];
+   const tc=new (window.AudioContext||window.webkitAudioContext)();const buf=await tc.decodeAudioData(await blob.arrayBuffer());tc.close&&tc.close();
+   let peak=0;const d=buf.getChannelData(0);for(let k=0;k<d.length;k+=16){const v=Math.abs(d[k]);if(v>peak)peak=v}
+   l.take={blob,buffer:buf,dur:buf.duration,norm:peak>0.001?Math.min(3,0.9/peak):1};
+   toast('Take saved ('+buf.duration.toFixed(1)+'s, line is '+(l.t1-l.t0).toFixed(1)+'s)')}
+  catch(e){toast('Couldn\u2019t decode that take \u2014 try again')}
+  renderUpLines()};
+ mr.start();renderUpLines();toast('Recording your line \u2014 tap \u25a0 when done')}
+function upTakePlay(i){const l=upLines[i];if(!l||!l.take)return;if(upTakeAudio){try{upTakeAudio.pause()}catch(e){}}
+ upTakeAudio=new Audio(URL.createObjectURL(l.take.blob));upTakeAudio.play()}
+function upTakeDel(i){const l=upLines[i];if(!l)return;l.take=null;renderUpLines();toast('Take removed')}
 $('#up-ai').onclick=async()=>{if(!upBlob)return;const key=LS.get('rs_key','');if(!key){toast('Add a Google AI Studio key in Settings first');return}
  const prompt=($('#up-prompt')?$('#up-prompt').value.trim():'');
  try{toast('Listening to your clip…');const ab=await upBlob.arrayBuffer();const tmp=new (window.AudioContext||window.webkitAudioContext)();const full=await tmp.decodeAudioData(ab);tmp.close&&tmp.close();
   const maxD=Math.min(360,full.duration);const off=new OfflineAudioContext(1,Math.floor(maxD*16000),16000);const src=off.createBufferSource();src.buffer=full;src.connect(off.destination);src.start(0,0,maxD);const mono=await off.startRendering();
   const step=100;const all=[];let added=0;
+  const P1='Transcribe ONLY the spoken dialogue in this film/video audio, in order. For each line: start and end in seconds from the start of THIS audio with two decimals, the exact words, and a short voice tag (2-4 lowercase words, underscores ok) that DESCRIBES THE VOICE you hear, like deep_male, young_female, raspy_old_man, kid, robot, radio_announcer. Every distinct voice gets its own tag: NEVER put two different voices under one tag even when they sound similar, and never give one voice two tags. Return ONLY JSON [{"start":n,"end":n,"speaker":"deep_male","text":"..."}]. Return [] if none.';
+  const ask=async parts=>{try{const body=JSON.stringify({contents:[{role:'user',parts}],generationConfig:{temperature:0.2,responseMimeType:'application/json'}});
+   const r=await fetch('https://generativelanguage.googleapis.com/v1beta/models/gemini-3.5-flash-lite:generateContent?key='+encodeURIComponent(key),{method:'POST',headers:{'Content-Type':'application/json'},body});
+   const j=await r.json();const c=(j.candidates||[])[0];const txt=((c&&c.content&&c.content.parts)||[]).map(p=>p.text||'').join('');
+   const A=txt.indexOf('['),B=txt.lastIndexOf(']');if(A>=0&&B>A){return JSON.parse(txt.slice(A,B+1))}return null}catch(e){return null}};
   for(let s=0;s<maxD;s+=step){const e=Math.min(maxD,s+step);const a=Math.floor(s*16000),b=Math.floor(e*16000);
    const sub={length:b-a,sampleRate:16000,getChannelData:()=>mono.getChannelData(0).subarray(a,b)};
    const b64=await new Promise(r=>{const fr=new FileReader();fr.onload=()=>r(fr.result.split(',')[1]);fr.readAsDataURL(encodeWAV(sub))});
-   const body=JSON.stringify({contents:[{role:'user',parts:[{text:'Transcribe ONLY the spoken dialogue in this film/video audio, in order. For each line: start and end in seconds from the start of THIS audio with two decimals, speaker label SPEAKER_A/SPEAKER_B..., exact words. Return ONLY JSON [{"start":n,"end":n,"speaker":"SPEAKER_A","text":"..."}]. Empty if none.'},{inlineData:{mimeType:'audio/wav',data:b64}}]}],generationConfig:{temperature:0.2,responseMimeType:'application/json'}});
-   const r=await fetch('https://generativelanguage.googleapis.com/v1beta/models/gemini-3.5-flash-lite:generateContent?key='+encodeURIComponent(key),{method:'POST',headers:{'Content-Type':'application/json'},body});
-   const j=await r.json();const txt=((j.candidates||[])[0]||{content:{parts:[]}}).content.parts.map(p=>p.text||'').join('');const A=txt.indexOf('['),B=txt.lastIndexOf(']');
-   if(A>=0&&B>A){let arr;try{arr=JSON.parse(txt.slice(A,B+1))}catch(x){continue}
-    arr.forEach(l=>{if(!l.text)return;const sp=l.speaker||'SPEAKER_A';all.push({sp,s:s+ +l.start,e:s+ +(l.end||+l.start+2),t:l.text});added++})}
+   let arr=await ask([{text:P1},{inlineData:{mimeType:'audio/wav',data:b64}}]);
+   if(arr&&arr.length&&arr.every(l=>l&&l.speaker&&l.text)){toast('Double-checking the voices…');
+    const P2='Re-listen to this audio carefully. A first pass produced these dialogue lines with voice tags: '+JSON.stringify(arr)+'. Fix the tags: two different voices must never share one tag (split them into two tags), and one voice must never carry two tags (merge those). Keep each line\u2019s start, end and text unless clearly wrong. Every tag is a short lowercase voice description (2-4 words). Return ONLY the corrected complete JSON list [{"start":n,"end":n,"speaker":"deep_male","text":"..."}].';
+    const a2=await ask([{text:P2},{inlineData:{mimeType:'audio/wav',data:b64}}]);
+    if(a2&&a2.length&&a2.every(l=>l&&l.speaker&&l.text))arr=a2}
+   if(arr)arr.forEach(l=>{if(!l.text||!l.speaker)return;const tg=String(l.speaker).toLowerCase().replace(/[^a-z0-9]+/g,'_').replace(/^_+|_+$/g,'').slice(0,24)||'unknown';all.push({sp:tg,s:s+ +l.start,e:s+ +(l.end||+l.start+2),t:l.text});added++});
    toast('Transcribed '+Math.round(e)+'s of '+Math.round(maxD)+'s…')}
   if(!all.length){toast('No dialogue found in the first 6 minutes — mark the lines by hand');return}
+  const tags={};all.forEach(l=>{const t=tags[l.sp]||(tags[l.sp]={n:0,q:l.t});tags[l.sp].n++});
+  const tks=Object.keys(tags);
+  if(tks.length>1){try{toast('Matching voices across the clip…');
+   const lst=tks.map((k,i)=>(i+1)+'. '+k+' ('+tags[k].n+' lines, e.g. \u201c'+tags[k].q.slice(0,40)+'\u201d)').join('\n');
+   const gp=JSON.stringify({contents:[{role:'user',parts:[{text:'These voice tags come from consecutive chunks of ONE video\u2019s transcript; different chunks may describe the same voice differently. Group the tags that refer to the SAME voice. Tags:\n'+lst+'\nReturn ONLY JSON {"groups":[["tag1","tag2"],["tag3"]]} where every tag appears in exactly one group; a tag can be its own group.'}]}],generationConfig:{temperature:0.1,responseMimeType:'application/json'}});
+   const gr=await fetch('https://generativelanguage.googleapis.com/v1beta/models/gemini-3.5-flash-lite:generateContent?key='+encodeURIComponent(key),{method:'POST',headers:{'Content-Type':'application/json'},body:gp});
+   const gj=await gr.json();const gc=(gj.candidates||[])[0];const gt=((gc&&gc.content&&gc.content.parts)||[]).map(p=>p.text||'').join('');const A=gt.indexOf('{'),B=gt.lastIndexOf('}');
+   if(A>=0&&B>A){const G=JSON.parse(gt.slice(A,B+1));const m={};(G.groups||[]).forEach(g=>{const ks=(g||[]).map(x=>String(x).toLowerCase().replace(/[^a-z0-9]+/g,'_')).filter(k=>tags[k]);ks.forEach(k=>{m[k]=ks[0]})});
+    tks.forEach(k=>{if(!m[k])m[k]=k});all.forEach(l=>{l.sp=m[l.sp]||l.sp})}}catch(e){}}
   const spMap={};all.forEach(l=>{if(!spMap[l.sp])spMap[l.sp]={id:addUpChar('Character '+(Object.keys(spMap).length+1)),n:Object.keys(spMap).length+1};upLines.push({ch:spMap[l.sp].id,t0:l.s,t1:l.e,text:l.t})});upSpMap=spMap;
   upLines.sort((a,b)=>a.t0-b.t0);renderUpLines();
   const stats={};all.forEach(l=>{const k=stats[l.sp]||(stats[l.sp]={n:0,talk:0,sample:l.t});stats[k].n++;stats[k].talk+=l.e-l.s});
   let pick=null;
-  if(prompt){try{toast('Matching your character…');const pb=JSON.stringify({contents:[{role:'user',parts:[{text:'A video\'s audio was transcribed with speaker labels. Stats: '+JSON.stringify(stats)+'. The user wants to voice-over the character described as: "'+prompt+'". Which single speaker label (SPEAKER_A, SPEAKER_B, ...) is most likely that character? Reply with ONLY the label.'}]}],generationConfig:{temperature:0.1}});
+  if(prompt){try{toast('Matching your character…');const ks=Object.keys(stats).sort((a,b)=>stats[b].talk-stats[a].talk);
+   const pb=JSON.stringify({contents:[{role:'user',parts:[{text:'A video\u2019s audio was transcribed with voice tags. Stats: '+JSON.stringify(stats)+'. The user wants to voice-over the character described as: \u201c'+prompt+'\u201d. Which single voice tag is most likely that character? Reply with ONLY the tag.'}]}],generationConfig:{temperature:0.1,responseMimeType:'application/json'}});
    const pr=await fetch('https://generativelanguage.googleapis.com/v1beta/models/gemini-3.5-flash-lite:generateContent?key='+encodeURIComponent(key),{method:'POST',headers:{'Content-Type':'application/json'},body:pb});
-   const pj=await pr.json();const pt=((pj.candidates||[])[0]||{content:{parts:[]}}).content.parts.map(p=>p.text||'').join('');const mm=pt.match(/SPEAKER_[A-Z]/);if(mm&&stats[mm[0]])pick=mm[0]}catch(e){}}
+   const pj=await pr.json();const pc=(pj.candidates||[])[0];const pt=((pc&&pc.content&&pc.content.parts)||[]).map(p=>p.text||'').join('');const low=pt.toLowerCase().replace(/[^a-z0-9_]+/g,'_');
+   for(const k of ks){if(low.indexOf(k)>=0){pick=k;break}}if(!pick){const mm=pt.match(/[a-z0-9_]+/g)||[];for(const w of mm){for(const k of ks){if(k.indexOf(w)>=0&&w.length>3){pick=k;break}}if(pick)break}}}catch(e){}}
   renderSpeakers(stats,pick,prompt);
-  toast(added+' lines found — tap the speaker you want to voice')}
+  toast(added+' lines found — tap the voice you want to dub')}
  catch(err){toast('Transcription failed — mark the lines by hand (it always works)')}};
 let upPick=null,upPickPrompt='',upSpMap=null;
 function renderSpeakers(stats,pick,prompt){upPick=pick;upPickPrompt=prompt||'';const box=$('#up-speakers');
  const keys=Object.keys(stats).sort((a,b)=>((b===pick)?1:0)-((a===pick)?1:0)||stats[b].talk-stats[a].talk);
  box.innerHTML='<div class="mini">Speakers found — tap the one you want to voice'+(pick?' (AI’s pick is marked)':'')+':</div>'+
- keys.map(k=>{const s=stats[k],lab=k.replace('SPEAKER_','Speaker ');
+ keys.map(k=>{const s=stats[k],lab=(k.indexOf('SPEAKER_')===0)?k.replace('SPEAKER_','Speaker '):k.replace(/_/g,' ');
   const cn=upSpMap&&upSpMap[k]?('Character '+upSpMap[k].n):lab;
   return '<div class="chip'+(k===pick?' on':'')+'" data-sp="'+k+'">'+cn+' \u00b7 '+s.n+' lines \u00b7 '+Math.round(s.talk)+'s \u2014 \u201c'+s.sample.slice(0,40)+'\u2026\u201d</div>'}).join('')+
  '<button class="btn sm p" id="up-voice" style="display:none">Voice it now →</button>';
  $$('#up-speakers .chip[data-sp]').forEach(el=>el.onclick=()=>{$$('#up-speakers .chip[data-sp]').forEach(x=>x.classList.remove('on'));el.classList.add('on');upPick=el.dataset.sp;$('#up-voice').style.display='block'});
  const vb=$('#up-voice');if(vb)vb.onclick=async()=>{if(!upPick)return;
-  const name=(upPickPrompt&&upPickPrompt.length<=28)?upPickPrompt:('Speaker '+upPick.replace('SPEAKER_',''));
+  const name=(upPickPrompt&&upPickPrompt.length<=28)?upPickPrompt:((upPick.indexOf('SPEAKER_')===0)?('Speaker '+upPick.replace('SPEAKER_','')):upPick.replace(/_/g,' '));
   const oldId=(upSpMap&&upSpMap[upPick])?upSpMap[upPick].id:Object.keys(upChars).find(k=>upChars[k].n==='Character '+upPick.replace('SPEAKER_',''));
   if(oldId)upChars[oldId].n=name;renderUpChars();
   const rec=await saveUploadScene();if(rec)openSetup(rec.id,oldId||upPick)}}
@@ -719,8 +757,9 @@ async function saveUploadScene(){if(!upBlob)return null;if(!upLines.length){toas
   chars:JSON.parse(JSON.stringify(upChars)),lines:upLines.map(l=>[l.ch,+l.t0.toFixed(2),+l.t1.toFixed(2),l.text])};
  def.videoURL=URL.createObjectURL(upBlob);CUSTOM.push(def);
  await dbPut('vids',{id:vid,blob:upBlob,name:def.title,def:JSON.parse(JSON.stringify(Object.assign({},def,{videoURL:undefined})))});
+ upTakeSeed={};upLines.forEach((l,i)=>{if(l.take)upTakeSeed[i]={blob:l.take.blob,buffer:l.take.buffer,dur:l.take.dur,norm:l.take.norm}});
  toast('Scene saved');return {id:vid}}
-$('#up-save').onclick=async()=>{const r=await saveUploadScene();if(r)go('lib')};
+$('#up-save').onclick=async()=>{const r=await saveUploadScene();upTakeSeed=null;if(r)go('lib')};
 /* ---------- init ---------- */
 (async function(){try{const vids=await dbAll('vids');CUSTOM=vids.filter(v=>v.def).map(v=>{const d=Object.assign({},v.def);d.videoURL=URL.createObjectURL(v.blob);return d})}catch(e){}
  SCENES.forEach(s=>s.videoURL=s.video);
