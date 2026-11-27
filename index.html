@@ -664,8 +664,12 @@ $('#up-add').onclick=()=>{if(upIn==null||upOut==null||upOut<=upIn){toast('Set a 
  if(upEdit!=null){upLines[upEdit]=rec;upEdit=null;$('#up-add').textContent='+ add line'}else upLines.push(rec);
  upLines.sort((a,b)=>a.t0-b.t0);upIn=upOut=null;$('#uptext').value='';$('#up-io').textContent='start — / end —';renderUpLines()};
 let upEdit=null;
-function renderUpLines(){$('#uplines').innerHTML=upLines.length?upLines.map((l,i)=>'<div class="row" style="font-size:12px;padding:6px 0;border-bottom:1px solid var(--line)"><i style="width:8px;height:8px;border-radius:50%;background:'+upChars[l.ch].c+';flex:none"></i><div style="flex:1;min-width:0">'+upChars[l.ch].n+' <span class="mini">'+l.t0.toFixed(1)+'–'+l.t1.toFixed(1)+'s · '+(l.t1-l.t0).toFixed(1)+'s long</span><div style="white-space:nowrap;overflow:hidden;text-overflow:ellipsis;color:var(--dim)">'+(l.text||'(no text)')+'</div></div><button class="btn sm" data-play="'+i+'">▶</button><button class="btn sm" data-edit="'+i+'">✎</button><button class="btn sm d" data-rm="'+i+'">✕</button></div>').join(''):'<div class="mini">No lines marked yet. Play the clip, pause where a line starts, set start and end, add it.</div>';
+let upFilter=null;
+function renderUpLines(){const counts={};upLines.forEach(l=>counts[l.ch]=(counts[l.ch]||0)+1);
+ const tabs='<div style="display:flex;gap:6px;flex-wrap:wrap;margin:4px 0 8px">'+('<div class="chip'+(upFilter?'':' on')+'" data-f="">All · '+upLines.length+'</div>')+Object.keys(upChars).filter(k=>counts[k]).map(k=>'<div class="chip'+(upFilter===k?' on':'')+'" data-f="'+k+'">'+upChars[k].n+' · '+counts[k]+'</div>').join('')+'</div>';
+ $('#uplines').innerHTML=upLines.length?tabs+upLines.map((l,i)=>'<div class="row" style="font-size:12px;padding:6px 0;border-bottom:1px solid var(--line)"><i style="width:8px;height:8px;border-radius:50%;background:'+upChars[l.ch].c+';flex:none"></i><div style="flex:1;min-width:0">'+upChars[l.ch].n+' <span class="mini">'+l.t0.toFixed(1)+'–'+l.t1.toFixed(1)+'s · '+(l.t1-l.t0).toFixed(1)+'s long</span><div style="white-space:nowrap;overflow:hidden;text-overflow:ellipsis;color:var(--dim)">'+(l.text||'(no text)')+'</div></div><button class="btn sm" data-play="'+i+'">▶</button><button class="btn sm" data-edit="'+i+'">✎</button><button class="btn sm d" data-rm="'+i+'">✕</button></div>').join(''):'<div class="mini">'+(upFilter?'No lines for this character yet.':'No lines marked yet. Play the clip, pause where a line starts, set start and end, add it.')+'</div>';
  $$('#uplines [data-rm]').forEach(el=>el.onclick=()=>{upLines.splice(+el.dataset.rm,1);if(upEdit==+el.dataset.rm)upEdit=null;renderUpLines()});
+ $$('#uplines [data-f]').forEach(el=>el.onclick=()=>{upFilter=el.dataset.f||null;renderUpLines()});
  $$('#uplines [data-play]').forEach(el=>el.onclick=()=>{const l=upLines[+el.dataset.play];const v=$('#upvid');v.currentTime=Math.max(0,l.t0-0.3);v.play();const st=()=>{if(v.currentTime>=l.t1+0.25){v.pause();v.removeEventListener('timeupdate',st)}};v.addEventListener('timeupdate',st)});
  $$('#uplines [data-edit]').forEach(el=>el.onclick=()=>{const i=+el.dataset.edit,l=upLines[i];upEdit=i;upIn=l.t0;upOut=l.t1;$('#up-linechar').value=l.ch;$('#uptext').value=l.text||'';$('#up-io').textContent='editing line '+(i+1)+' — reset start/end below or with the buttons';$('#up-add').textContent='save changes';const v=$('#upvid');v.currentTime=Math.max(0,l.t0-0.5);$('#up-io').scrollIntoView({block:'center'})})}
 $('#up-ai').onclick=async()=>{if(!upBlob)return;const key=LS.get('rs_key','');if(!key){toast('Add a Google AI Studio key in Settings first');return}
@@ -683,7 +687,7 @@ $('#up-ai').onclick=async()=>{if(!upBlob)return;const key=LS.get('rs_key','');if
     arr.forEach(l=>{if(!l.text)return;const sp=l.speaker||'SPEAKER_A';all.push({sp,s:s+ +l.start,e:s+ +(l.end||+l.start+2),t:l.text});added++})}
    toast('Transcribed '+Math.round(e)+'s of '+Math.round(maxD)+'s…')}
   if(!all.length){toast('No dialogue found in the first 6 minutes — mark the lines by hand');return}
-  all.forEach(l=>{const id=addUpChar(l.sp.replace('SPEAKER_','Speaker '));upLines.push({ch:id,t0:l.s,t1:l.e,text:l.t})});
+  const spMap={};all.forEach(l=>{if(!spMap[l.sp])spMap[l.sp]={id:addUpChar('Character '+(Object.keys(spMap).length+1)),n:Object.keys(spMap).length+1};upLines.push({ch:spMap[l.sp].id,t0:l.s,t1:l.e,text:l.t})});upSpMap=spMap;
   upLines.sort((a,b)=>a.t0-b.t0);renderUpLines();
   const stats={};all.forEach(l=>{const k=stats[l.sp]||(stats[l.sp]={n:0,talk:0,sample:l.t});stats[k].n++;stats[k].talk+=l.e-l.s});
   let pick=null;
@@ -693,17 +697,17 @@ $('#up-ai').onclick=async()=>{if(!upBlob)return;const key=LS.get('rs_key','');if
   renderSpeakers(stats,pick,prompt);
   toast(added+' lines found — tap the speaker you want to voice')}
  catch(err){toast('Transcription failed — mark the lines by hand (it always works)')}};
-let upPick=null,upPickPrompt='';
+let upPick=null,upPickPrompt='',upSpMap=null;
 function renderSpeakers(stats,pick,prompt){upPick=pick;upPickPrompt=prompt||'';const box=$('#up-speakers');
  const keys=Object.keys(stats).sort((a,b)=>((b===pick)?1:0)-((a===pick)?1:0)||stats[b].talk-stats[a].talk);
  box.innerHTML='<div class="mini">Speakers found — tap the one you want to voice'+(pick?' (AI’s pick is marked)':'')+':</div>'+
  keys.map(k=>{const s=stats[k],lab=k.replace('SPEAKER_','Speaker ');
-  return '<div class="chip'+(k===pick?' on':'')+'" data-sp="'+k+'">'+lab+' · '+s.n+' lines · '+Math.round(s.talk)+'s — “'+s.sample.slice(0,46)+'…”</div>'}).join('')+
+  return '<div class="chip'+(k===pick?' on':'')+'" data-sp="'+k+'">'+(upSpMap&&upSpMap[k]?'Character '+upSpMap[k].n+' · '+s.n+' lines · '+Math.round(s.talk)+'s — “'+s.sample.slice(0,40)+'…”':lab+' · '+s.n+' lines · '+Math.round(s.talk)+'s — “'+s.sample.slice(0,40)+'…”')</div>'}).join('')+
  '<button class="btn sm p" id="up-voice" style="display:none">Voice it now →</button>';
  $$('#up-speakers .chip[data-sp]').forEach(el=>el.onclick=()=>{$$('#up-speakers .chip[data-sp]').forEach(x=>x.classList.remove('on'));el.classList.add('on');upPick=el.dataset.sp;$('#up-voice').style.display='block'});
  const vb=$('#up-voice');if(vb)vb.onclick=async()=>{if(!upPick)return;
   const name=(upPickPrompt&&upPickPrompt.length<=28)?upPickPrompt:('Speaker '+upPick.replace('SPEAKER_',''));
-  const oldId=Object.keys(upChars).find(k=>upChars[k].n==='Speaker '+upPick.replace('SPEAKER_',''));
+  const oldId=(upSpMap&&upSpMap[upPick])?upSpMap[upPick].id:Object.keys(upChars).find(k=>upChars[k].n==='Character '+upPick.replace('SPEAKER_',''));
   if(oldId)upChars[oldId].n=name;renderUpChars();
   const rec=await saveUploadScene();if(rec)openSetup(rec.id,oldId||upPick)}}
 async function saveUploadScene(){if(!upBlob)return null;if(!upLines.length){toast('Mark at least one line');return null}
